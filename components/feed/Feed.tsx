@@ -9,7 +9,7 @@ import { PostType } from "@/types";
 const Feed = () => {
   const dispatch = useDispatch();
   const posts = useSelector(
-    (state: { feed: { posts: PostType[] } }) => state.feed.posts
+    (state: { feed: { posts: PostType[] } }) => state.feed.posts,
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

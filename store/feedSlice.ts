@@ -1,10 +1,10 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { PostType } from '../types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { PostType } from "../types";
 
 const initialPosts: PostType[] = [];
 
 const feedSlice = createSlice({
-  name: 'feed',
+  name: "feed",
   initialState: {
     posts: initialPosts,
   },

@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import LoginForm from "./login";
 import { Provider } from "react-redux";
-import store from '@/store/store';
+import store from "@/store/store";
 import ChallengeScreen from "./challengeScreen";
 import FeedScreen from "./FeedScreen";
 
@@ -47,7 +47,7 @@ export default function HomeScreen() {
       .then((userCredential) => {
         Alert.alert(
           "Erfolg",
-          `Benutzer erstellt: ${userCredential.user.email}`
+          `Benutzer erstellt: ${userCredential.user.email}`,
         );
       })
       .catch((error) => {
@@ -60,7 +60,7 @@ export default function HomeScreen() {
       .then((userCredential) => {
         Alert.alert(
           "Erfolg",
-          `Willkommen zurück, ${userCredential.user.email}`
+          `Willkommen zurück, ${userCredential.user.email}`,
         );
       })
       .catch((error) => {

@@ -1,5 +1,12 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Animated,
+} from "react-native";
 import { PostType } from "@/types";
 
 interface PostProps {
@@ -28,13 +35,16 @@ const Post: React.FC<PostProps> = ({ post }) => {
   };
 
   const handleReaction = (reaction: string) => {
-    // Notify the store or API about the reaction
     console.log(`User reacted with: ${reaction}`);
     toggleReactions();
   };
 
   const reactionButtons = ["👍", "❤️", "😂", "😮", "😢"].map((emoji) => (
-    <TouchableOpacity key={emoji} style={styles.reactionButton} onPress={() => handleReaction(emoji)}>
+    <TouchableOpacity
+      key={emoji}
+      style={styles.reactionButton}
+      onPress={() => handleReaction(emoji)}
+    >
       <Text>{emoji}</Text>
     </TouchableOpacity>
   ));
@@ -54,25 +64,37 @@ const Post: React.FC<PostProps> = ({ post }) => {
   return (
     <View style={styles.postContainer}>
       <View style={styles.header}>
-        <Image source={{ uri: post.user.profilePictureUrl }} style={styles.profilePicture} />
+        <Image
+          source={{ uri: post.user.profilePictureUrl }}
+          style={styles.profilePicture}
+        />
         <View style={styles.userInfo}>
           <Text style={styles.username}>{post.user.username}</Text>
           <Text style={styles.location}>{post.location}</Text>
         </View>
       </View>
-      <Image source={{ uri: post.imageUrl }} style={styles.image} resizeMode="cover" />
-      <TouchableOpacity style={styles.reactionToggleButton} onPress={toggleReactions}>
-        <Text>⚡</Text>
-      </TouchableOpacity>
-      <Text style={styles.challenge}>Challenge: {post.challenge}</Text>
-      <Text style={styles.date}>{new Date(post.submittedAt).toLocaleDateString()}</Text>
-      <View style={styles.reactionsContainer}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={styles.image}
+          resizeMode="contain"
+        />
+        <TouchableOpacity
+          style={styles.reactionToggleButton}
+          onPress={toggleReactions}
+        >
+          <Text style={styles.reactionToggleText}>⚡</Text>
+        </TouchableOpacity>
         {reactionsVisible && (
           <Animated.View style={[styles.reactions, reactionStyle]}>
             {reactionButtons}
           </Animated.View>
         )}
       </View>
+      <Text style={styles.challenge}>Challenge: {post.challenge}</Text>
+      <Text style={styles.date}>
+        {new Date(post.submittedAt).toLocaleDateString()}
+      </Text>
       <View style={styles.comments}>
         <Text style={styles.commentTitle}>Comments:</Text>
         {/* Render comments here */}
@@ -80,7 +102,6 @@ const Post: React.FC<PostProps> = ({ post }) => {
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   postContainer: {
@@ -112,22 +133,52 @@ const styles = StyleSheet.create({
   },
   username: {
     fontWeight: "bold",
+    color: "#fff",
   },
   location: {
     color: "#888",
   },
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+  },
   image: {
     width: "100%",
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 5,
+  },
+  reactionToggleButton: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "#444",
+    borderRadius: 25, // Kreisförmig
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2, // Über dem Bild
+  },
+  reactionToggleText: {
+    fontSize: 24,
+    color: "#fff",
+  },
+  reactions: {
+    position: "absolute",
+    bottom: 10,
+    right: 70, // Platzierung links vom Button
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  reactionButton: {
+    marginRight: 10,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 5,
   },
   challenge: {
     fontSize: 16,
-    color: "#fff",
-    marginTop: 5,
-  },
-  content: {
-    fontSize: 14,
     color: "#fff",
     marginTop: 5,
   },
@@ -135,23 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#aaa",
     marginTop: 5,
-  },
-  reactionsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  reactionToggleButton: {
-    backgroundColor: "#444",
-    borderRadius: 20,
-    padding: 10,
-  },
-  reactions: {
-    flexDirection: "row",
-    marginLeft: 10,
-  },
-  reactionButton: {
-    marginRight: 10,
   },
   comments: {
     marginTop: 10,

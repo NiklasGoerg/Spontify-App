@@ -3,6 +3,7 @@ import { View, StyleSheet, Image, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
 import Feed from "@/components/feed/Feed";
 import { PostType } from "../types";
+import ChallengeButton from "@/components/feed/challengeButton";
 
 const FeedScreen = () => {
   const posts: PostType[] = useSelector((state: any) => state.feed.posts);
@@ -10,13 +11,23 @@ const FeedScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Image source={require("@/assets/images/friends.svg")} style={styles.icon} />
-        <Image source={require("@/assets/images/logo.png")} style={styles.logo} />
-        <Image source={require("@/assets/images/profile-pic.jpg")} style={styles.icon} />
+        <Image
+          source={require("@/assets/images/friends.svg")}
+          style={styles.icon}
+        />
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={styles.logo}
+        />
+        <Image
+          source={require("@/assets/images/profile-pic.jpg")}
+          style={styles.icon}
+        />
       </View>
       <ScrollView contentContainerStyle={styles.feedContainer}>
         <Feed posts={posts} />
       </ScrollView>
+      <ChallengeButton />
     </View>
   );
 };

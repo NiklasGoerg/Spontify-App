@@ -13,7 +13,7 @@ const firebaseConfig = {
   storageBucket: "spontify-backend.firebasestorage.app",
   messagingSenderId: "436955983049",
   appId: "1:436955983049:web:fd51cd9e99c54c01f43118",
-  measurementId: "G-PJV1RVX4KB"
+  measurementId: "G-PJV1RVX4KB",
 };
 
 // Initialize Firebase

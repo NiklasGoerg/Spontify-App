@@ -1,5 +1,11 @@
 import React from "react";
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+} from "react-native";
 
 interface LoginFormProps {
   email: string;
@@ -10,7 +16,14 @@ interface LoginFormProps {
   onLogin: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ email, password, setEmail, setPassword, onRegister, onLogin }) => {
+const LoginForm: React.FC<LoginFormProps> = ({
+  email,
+  password,
+  setEmail,
+  setPassword,
+  onRegister,
+  onLogin,
+}) => {
   return (
     <View style={styles.container}>
       <TextInput
