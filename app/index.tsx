@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  User,
+} from "firebase/auth";
 import LoginForm from "./login";
+import { Provider } from "react-redux";
+import store from '@/store/store';
 import ChallengeScreen from "./challengeScreen";
+import FeedScreen from "./FeedScreen";
 
 // Firebase-Konfiguration
 const firebaseConfig = {
@@ -13,7 +22,7 @@ const firebaseConfig = {
   storageBucket: "spontify-backend.firebasestorage.app",
   messagingSenderId: "436955983049",
   appId: "1:436955983049:web:fd51cd9e99c54c01f43118",
-  measurementId: "G-PJV1RVX4KB"
+  measurementId: "G-PJV1RVX4KB",
 };
 
 // Initialise Firebase-app
@@ -23,20 +32,23 @@ const auth = getAuth(app);
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState<User | null>(null); 
+  const [user, setUser] = useState<User | null>(null);
 
   // Authentication status monitoring
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); 
+      setUser(currentUser);
     });
-    return unsubscribe; 
+    return unsubscribe;
   }, []);
 
   const handleSignUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        Alert.alert("Erfolg", `Benutzer erstellt: ${userCredential.user.email}`);
+        Alert.alert(
+          "Erfolg",
+          `Benutzer erstellt: ${userCredential.user.email}`
+        );
       })
       .catch((error) => {
         Alert.alert("Fehler bei der Registrierung", error.message);
@@ -46,7 +58,10 @@ export default function HomeScreen() {
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        Alert.alert("Erfolg", `Willkommen zurück, ${userCredential.user.email}`);
+        Alert.alert(
+          "Erfolg",
+          `Willkommen zurück, ${userCredential.user.email}`
+        );
       })
       .catch((error) => {
         Alert.alert("Fehler bei der Anmeldung", error.message);
@@ -54,20 +69,22 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {user ? (
-        <ChallengeScreen />
-      ) : (
-        <LoginForm
-          email={email}
-          password={password}
-          setEmail={setEmail}
-          setPassword={setPassword}
-          onRegister={handleSignUp}
-          onLogin={handleLogin}
-        />
-      )}
-    </View>
+    <Provider store={store}>
+      <View style={styles.container}>
+        {user ? (
+          <FeedScreen />
+        ) : (
+          <LoginForm
+            email={email}
+            password={password}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            onRegister={handleSignUp}
+            onLogin={handleLogin}
+          />
+        )}
+      </View>
+    </Provider>
   );
 }
 
