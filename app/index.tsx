@@ -1,78 +1,91 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Alert } from "react-native";
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  User,
-} from "firebase/auth";
-import LoginForm from "./login";
+import { supabase } from "../supabaseClient"; // Supabase-Client importieren
+import LoginForm from "./login"; // Deine Login-Formular-Komponente
 import { Provider } from "react-redux";
 import store from "@/store/store";
-import ChallengeScreen from "./challengeScreen";
-import FeedScreen from "./FeedScreen";
-
-// Firebase-Konfiguration
-const firebaseConfig = {
-  apiKey: "AIzaSyD63f9TUicXWEVnm7vYM-g6uTOUtwazPcs",
-  authDomain: "spontify-backend.firebaseapp.com",
-  projectId: "spontify-backend",
-  storageBucket: "spontify-backend.firebasestorage.app",
-  messagingSenderId: "436955983049",
-  appId: "1:436955983049:web:fd51cd9e99c54c01f43118",
-  measurementId: "G-PJV1RVX4KB",
-};
-
-// Initialise Firebase-app
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import FeedScreen from "./FeedScreen"; // Dein Feed-Bildschirm
 
 export default function HomeScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState(""); // E-Mail des Benutzers
+  const [password, setPassword] = useState(""); // Passwort des Benutzers
+  const [user, setUser] = useState(null); // Benutzer-Session
 
-  // Authentication status monitoring
+  // Authentifizierungsstatus überwachen
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return unsubscribe;
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Fehler beim Abrufen der Session:", error.message);
+        setUser(null);
+      } else {
+        setUser(data?.session?.user || null);
+      }
+    };
+
+    fetchSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
-  const handleSignUp = () => {
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        Alert.alert(
-          "Erfolg",
-          `Benutzer erstellt: ${userCredential.user.email}`,
-        );
-      })
-      .catch((error) => {
-        Alert.alert("Fehler bei der Registrierung", error.message);
+  // Benutzer registrieren
+  const handleSignUp = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
       });
+
+      if (error) throw error;
+
+      Alert.alert("Erfolg", `Benutzer erstellt: ${data.user.email}`);
+    } catch (error) {
+      Alert.alert("Fehler bei der Registrierung", error.message);
+    }
   };
 
-  const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        Alert.alert(
-          "Erfolg",
-          `Willkommen zurück, ${userCredential.user.email}`,
-        );
-      })
-      .catch((error) => {
-        Alert.alert("Fehler bei der Anmeldung", error.message);
+  // Benutzer anmelden
+  const handleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (error) throw error;
+
+      Alert.alert("Erfolg", `Willkommen zurück, ${data.user.email}`);
+    } catch (error) {
+      Alert.alert("Fehler bei der Anmeldung", error.message);
+    }
+  };
+
+  // Benutzer abmelden
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      setUser(null);
+      Alert.alert("Abgemeldet", "Sie wurden erfolgreich abgemeldet.");
+    } catch (error) {
+      Alert.alert("Fehler beim Abmelden", error.message);
+    }
   };
 
   return (
     <Provider store={store}>
       <View style={styles.container}>
         {user ? (
-          <FeedScreen />
+          <FeedScreen onSignOut={handleSignOut} /> // Feed anzeigen, wenn Benutzer angemeldet ist
         ) : (
           <LoginForm
             email={email}
