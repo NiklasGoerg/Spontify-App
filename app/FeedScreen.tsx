@@ -1,12 +1,16 @@
 import React from "react";
-import { View, StyleSheet, Image, ScrollView } from "react-native";
+import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from "react-native";
 import { useSelector } from "react-redux";
 import Feed from "@/components/feed/Feed";
 import { PostType } from "../types";
 import ChallengeButton from "@/components/feed/challengeButton";
+import { Link } from "expo-router"; // Importiere Link
 
-const FeedScreen = () => {
+
+
+const FeedScreen = ({ navigation }: { navigation: any }) => {
   const posts: PostType[] = useSelector((state: any) => state.feed.posts);
+
 
   return (
     <View style={styles.container}>
@@ -19,10 +23,13 @@ const FeedScreen = () => {
           source={require("@/assets/images/logo.png")}
           style={styles.logo}
         />
-        <Image
-          source={require("@/assets/images/profile-pic.jpg")}
-          style={styles.icon}
-        />
+        
+        <Link href="/ProfileScreen" asChild>
+          <Image
+            source={require("@/assets/images/profile-pic.jpg")}
+            style={styles.icon}
+          />
+        </Link>
       </View>
       <ScrollView contentContainerStyle={styles.feedContainer}>
         <Feed posts={posts} />
