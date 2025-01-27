@@ -11,10 +11,28 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { supabase } from "../supabaseClient";
 import * as FileSystem from "expo-file-system";
+import { getRandomChallenge } from "../api/challenges";
+import { useEffect } from "react";
+import { fetchPreferences } from "../api/preferences";
+
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [dailyChallenge, setDailyChallenge] = useState<any>(null);
+
+  useEffect(() => {
+    const loadChallenge = async () => {
+      const userPreferences = await fetchPreferences(); // Hole die Präferenzen des Nutzers
+      const preferences = Object.keys(userPreferences).filter(
+        (key) => userPreferences[key]
+      ); // Nur aktivierte Präferenzen
+      const challenge = await getRandomChallenge(preferences);
+      setDailyChallenge(challenge);
+    };
+  
+    loadChallenge();
+  }, []);
 
   const handleAcceptChallenge = () => {
     setIsChallengeAccepted(true);
@@ -189,9 +207,18 @@ export default function ChallengeScreen() {
       ) : (
         <>
           <Text style={styles.title}>Your challenge for today</Text>
-          <Text style={styles.description}>
-            Take a photo that captures something beautiful about your day.
-          </Text>
+          {dailyChallenge ? (
+            <View>
+              <Text style={styles.challengeTitle}>{dailyChallenge.title}</Text>
+              <Text style={styles.challengeDescription}>
+                {dailyChallenge.description}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.description}>
+              Keine Challenge verfügbar. Überprüfe deine Präferenzen.
+            </Text>
+          )}
           <View style={styles.buttonsContainer}>
             {!isChallengeAccepted ? (
               <TouchableOpacity
@@ -280,4 +307,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
+  challengeTitle: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  challengeDescription: {
+    color: "#ffffff",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  
 });
