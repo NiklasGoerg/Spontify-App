@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { Link } from "expo-router";
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
@@ -23,7 +24,7 @@ export default function ChallengeScreen() {
     if (permissionResult.granted === false) {
       Alert.alert(
         "Berechtigung benötigt",
-        "Du musst die Kamera-Berechtigung erteilen!",
+        "Du musst die Kamera-Berechtigung erteilen!"
       );
       return;
     }
@@ -51,7 +52,7 @@ export default function ChallengeScreen() {
             onPress: () => setPhotoUri(result.assets[0].uri), // Foto speichern
           },
         ],
-        { cancelable: false },
+        { cancelable: false }
       );
     }
   };
@@ -64,9 +65,21 @@ export default function ChallengeScreen() {
           <Text style={styles.successText}>
             Challenge erfolgreich abgeschlossen!
           </Text>
+          <Link href="/" style={styles.finishButton}>
+            <TouchableOpacity >
+              <Text style={styles.buttonText}>Accept Challenge</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       ) : (
         <>
+          <Link href="/">
+            <View style={styles.topBar}>
+              <TouchableOpacity>
+                <Text style={styles.closeButton}>X</Text>
+              </TouchableOpacity>
+            </View>
+          </Link>
           <Text style={styles.title}>Your challenge for today</Text>
           <Text style={styles.description}>
             Take a photo that captures something beautiful about your day.
@@ -158,5 +171,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginTop: 20,
+  },
+  finishButton: {
+    backgroundColor: "#4CAF50",
+    width: "100%",
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  topBar: {
+    position: "absolute",
+    top: -220,
+    right: -180,
+    height: 60,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    backgroundColor: "#000",
+    borderRadius: 80,
+  },
+  closeButton: {
+    color: "#ffffff",
+    fontSize: 24,
   },
 });

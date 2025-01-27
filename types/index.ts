@@ -36,3 +36,9 @@ export type PostType = {
   comments: challengeComment[];
   reactions: challengeReaction[];
 };
+
+export type Challenge = {
+  id: string;
+  title: string;
+  tags: string[];
+}
