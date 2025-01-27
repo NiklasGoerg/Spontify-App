@@ -15,6 +15,7 @@ import { getRandomChallenge } from "../api/challenges";
 import { useEffect } from "react";
 import { fetchPreferences } from "../api/preferences";
 
+import { Link } from "expo-router";
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
@@ -203,9 +204,21 @@ export default function ChallengeScreen() {
           <Text style={styles.successText}>
             Challenge erfolgreich abgeschlossen!
           </Text>
+          <Link href="/" style={styles.finishButton}>
+            <TouchableOpacity >
+              <Text style={styles.buttonText}>Accept Challenge</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       ) : (
         <>
+          <Link href="/">
+            <View style={styles.topBar}>
+              <TouchableOpacity>
+                <Text style={styles.closeButton}>X</Text>
+              </TouchableOpacity>
+            </View>
+          </Link>
           <Text style={styles.title}>Your challenge for today</Text>
           {dailyChallenge ? (
             <View>
@@ -320,4 +333,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   
+  finishButton: {
+    backgroundColor: "#4CAF50",
+    width: "100%",
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  topBar: {
+    position: "absolute",
+    top: -220,
+    right: -180,
+    height: 60,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    backgroundColor: "#000",
+    borderRadius: 80,
+  },
+  closeButton: {
+    color: "#ffffff",
+    fontSize: 24,
+  },
 });
