@@ -15,10 +15,12 @@ const FeedScreen = ({ navigation }: { navigation: any }) => {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Image
-          source={require("@/assets/images/friends.svg")}
-          style={styles.icon}
-        />
+        <Link href="/FriendManagementScreen" asChild>
+          <Image
+            source={require("@/assets/images/friends.svg")}
+            style={styles.icon}
+          />
+        </Link>
         <Image
           source={require("@/assets/images/logo.png")}
           style={styles.logo}
