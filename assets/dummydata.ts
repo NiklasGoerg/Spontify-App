@@ -53,7 +53,7 @@ export const mockPosts: PostType[] = [
         "https://images.unsplash.com/photo-1552196527-90dc99d938bc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDI5fF9oYi1kbDRRLTRVfHxlbnwwfHx8fHw%3D",
       location: "Berlin",
       comments: [],
-      reactions: [],
+      reactions: [{reaction: "🔥"}, {reaction: "🔥"}, {reaction: "❤"}, {reaction: "🔥"}],
     },
     {
       id: "2",

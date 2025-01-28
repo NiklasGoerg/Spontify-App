@@ -8,6 +8,7 @@ import {
   Animated,
 } from "react-native";
 import { PostType } from "@/types";
+import { saveReaction } from "@/api/posts";
 
 interface PostProps {
   post: PostType;
@@ -36,6 +37,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
   const handleReaction = (reaction: string) => {
     console.log(`User reacted with: ${reaction}`);
+    saveReaction(post.id, reaction);
     toggleReactions();
   };
 
@@ -79,6 +81,19 @@ const Post: React.FC<PostProps> = ({ post }) => {
           style={styles.image}
           resizeMode="contain"
         />
+        <View style={styles.reactionsContainer}>
+        {post.reactions.map((reaction, index) => (
+          <Text
+            key={index}
+            style={[
+              styles.reactionEmoji,
+              { left: index * 10, top: index * 5 },
+            ]}
+          >
+            {reaction.reaction}
+          </Text>
+        ))}
+      </View>
         <TouchableOpacity
           style={styles.reactionToggleButton}
           onPress={toggleReactions}
@@ -193,6 +208,17 @@ const styles = StyleSheet.create({
   commentTitle: {
     fontSize: 16,
     color: "#fff",
+  },
+  reactionsContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 20,
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  reactionEmoji: {
+    fontSize: 20,
+    position: "absolute",
   },
 });
 

@@ -17,7 +17,7 @@ export const saveComment = async (comment: any) => {
     return true;
 };
 // (Maike)
-export const saveReaction = async (reaction: any) => {
+export const saveReaction = async (postId: string, reaction: string) => {
     //...
     return true;
 }
