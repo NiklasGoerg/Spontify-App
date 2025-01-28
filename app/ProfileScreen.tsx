@@ -93,10 +93,12 @@ const ProfileScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Image
-          source={require("@/assets/images/logo.png")}
-          style={styles.logo}
-        />
+        <Link href="/">
+          <Image
+            source={require("@/assets/images/logo.png")}
+            style={styles.logo}
+          />
+        </Link>
       </View>
 
       <View style={styles.profileContainer}>
