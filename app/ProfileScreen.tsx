@@ -6,10 +6,12 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Image
-          source={require("@/assets/images/logo.png")}
-          style={styles.logo}
-        />
+        <Link href="/">
+          <Image
+            source={require("@/assets/images/logo.png")}
+            style={styles.logo}
+          />
+        </Link>
       </View>
 
       <View style={styles.profileContainer}>
@@ -23,15 +25,15 @@ export default function ProfileScreen() {
         <Text style={styles.userName}>Name Platzhalter</Text>
         <Text style={styles.userEmail}>email Platzhalter</Text>
 
-        
-
         {/* Abschnitt Challenge Settings */}
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
           {/* Button 2: Challenge preference */}
           <Link href="/ChallengeTypesScreen" asChild>
             <TouchableOpacity style={styles.challengeButton}>
-              <Text style={styles.challengeButtonText}>Challenge preference</Text>
+              <Text style={styles.challengeButtonText}>
+                Challenge preference
+              </Text>
               <Text style={styles.arrow}>&gt;</Text> {/* Pfeil */}
             </TouchableOpacity>
           </Link>
@@ -39,11 +41,10 @@ export default function ProfileScreen() {
 
         {/* Button: Logout */}
         <View style={styles.settingsSection}>
-            <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionButtonText}>Logout</Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
         </View>
-
       </View>
     </View>
   );
