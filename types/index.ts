@@ -41,4 +41,10 @@ export type Challenge = {
   id: string;
   title: string;
   tags: string[];
-}
+};
+
+export type Friend = {
+  friend_id: string;
+  friend_name: string;
+  id: string;
+};
