@@ -117,11 +117,17 @@ export default function ChallengeScreen() {
       console.log("Upload erfolgreich:", data);
   
       // Hole die öffentliche URL
-      const { publicUrl } = supabase.storage
+      /*const { publicUrl } = supabase.storage
         .from("images")
         .getPublicUrl(data.path);
-  
+        */
+
+      const baseUrl = "xbszoksbpwbmvjfjjcjl.supabase.co/storage/v1/object/public/images/";
+      const publicUrl = `${baseUrl}${data.path}`;
+
+      console.log("data.path:", data.path)
       console.log("Öffentliche URL:", publicUrl);
+
       return publicUrl;
     } catch (err) {
       console.error("Fehler beim Hochladen:", err);
