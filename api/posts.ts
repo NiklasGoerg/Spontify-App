@@ -1,3 +1,4 @@
+import { Friend } from "@/types";
 import { supabase } from "../supabaseClient";
 
 // posts von user abrufen (Maike)
@@ -23,6 +24,10 @@ export const saveReaction = async (postId: string, reaction: string) => {
 }
 
 // posts von freunden abrufen (Niklas)
-export const fetchFriendsPosts = async () => {
-    
+export const fetchFriendsPosts = async (friends: Friend[]) => {
+    let posts: any[] = [];
+    friends.forEach(async (friend) => {
+        const postsOfFriend = fetchPostsByUser(friend.friend_id);
+        posts = posts.concat(postsOfFriend);
+    });
 };

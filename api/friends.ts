@@ -14,7 +14,7 @@ export const fetchFriends = async () => {
     console.error("Fehler beim Abrufen der Freunde:", error.message);
     return [];
   }
-
+  console.log(data);
   return data || [];
 };
 

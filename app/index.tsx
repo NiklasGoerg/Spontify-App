@@ -5,6 +5,7 @@ import LoginForm from "./login"; // Deine Login-Formular-Komponente
 import { Provider } from "react-redux";
 import store from "@/store/store";
 import FeedScreen from "./FeedScreen"; // Dein Feed-Bildschirm
+import { fetchFriends } from "@/api/friends";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState(""); // E-Mail des Benutzers
@@ -12,7 +13,7 @@ export default function HomeScreen() {
   const [user, setUser] = useState(null); // Benutzer-Session
 
   // Authentifizierungsstatus überwachen
-  useEffect(() => {
+  useEffect(async () => {
     const fetchSession = async () => {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
@@ -30,6 +31,9 @@ export default function HomeScreen() {
         setUser(session?.user || null);
       }
     );
+    
+          const friendsData = await fetchFriends();
+          console.log("index: ", friendsData);
 
     return () => {
       authListener?.subscription?.unsubscribe();
