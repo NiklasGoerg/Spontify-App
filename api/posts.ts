@@ -1,7 +1,7 @@
 import { supabase } from "../supabaseClient";
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
-export const fetchPostsByUser = async (userId) => {
+export const fetchPostsByUser = async (userId: string) => {
     if (!userId) {
       console.error("Fehlende userId.");
       return null;
@@ -20,7 +20,7 @@ export const fetchPostsByUser = async (userId) => {
         return null;
       }
   
-      const friendIds = friends.map(friend => friend.friend_id);
+      const friendIds = friends.map((friend: any) => friend.friend_id);
   
       if (friendIds.length === 0) {
         console.log("Keine Freunde gefunden.");
@@ -49,7 +49,7 @@ export const fetchPostsByUser = async (userId) => {
   
 
 // (Maike) -> savePost
-export const savePost = async (userId, challengeId, photoUrl, description) => {
+export const savePost = async (userId: string, challengeId: string, photoUrl: string, description: string) => {
     if (!userId || !challengeId || !photoUrl || !description) {
       console.error("Fehlende Werte: userId, challengeId, photoUrl oder description ist leer.");
       return null;
@@ -83,7 +83,7 @@ export const savePost = async (userId, challengeId, photoUrl, description) => {
   
 
 // (Maike) saveComment
-const saveComment = async (postId, userId, content) => {
+export const saveComment = async (postId: any, userId: any, content: any) => {
   if (!postId || !userId || !content) {
     console.error("Fehlende Werte: postId, userId oder content ist leer.");
     return null;
@@ -115,7 +115,7 @@ const saveComment = async (postId, userId, content) => {
 
   
   // Kommentare abrufen
-  export const fetchComments = async (postId) => {
+  export const fetchComments = async (postId: string) => {
     if (!postId) {
       console.error("Fehlende postId.");
       return null;
@@ -142,7 +142,7 @@ const saveComment = async (postId, userId, content) => {
   
   
 // (Maike) -> saveReaction
-export const saveReaction = async (postId, userId, reactionType) => {
+export const saveReaction = async (postId: string, userId: string, reactionType: string | undefined) => {
     if (!postId || !userId || !reactionType) {
       console.error("Fehlende Werte: postId, userId oder reactionType ist leer.");
       return null;
@@ -173,7 +173,7 @@ export const saveReaction = async (postId, userId, reactionType) => {
   };
   
   // Reaktionen abrufen
-  export const fetchReactions = async (postId) => {
+  export const fetchReactions = async (postId: string) => {
     if (!postId) {
       console.error("Fehlende postId.");
       return null;
