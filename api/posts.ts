@@ -1,7 +1,9 @@
 import { Friend } from "@/types";
 import { supabase } from "../supabaseClient";
-import { mockPosts } from "@/assets/dummydata";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import store from "../store/store";
+import { setPosts, setUser, setFriends, setChallenges } from "../store/feedSlice";
+
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
@@ -43,6 +45,10 @@ export const fetchPostsByUser = async (userId: string) => {
       }
   
       console.log("Beiträge erfolgreich abgerufen:", posts);
+      savePostsOnDevice(posts);
+
+      store.dispatch(setPosts(posts));
+
       return posts;
     } catch (err) {
       console.error("Unerwarteter Fehler beim Abrufen der Beiträge:", err);
@@ -218,7 +224,7 @@ const savePostsOnDevice = async (posts: any[]) => {
   try {
     const jsonData = JSON.stringify(posts);
     await AsyncStorage.setItem("posts", jsonData);
-    console.log("Posts erfolgreich gespeichert!");
+    console.log("Posts erfolgreich gespeichert!", jsonData);
   } catch (error) {
     console.error("Fehler beim Speichern der Posts:", error);
   }
@@ -232,4 +238,12 @@ const loadPostsFromDevice = async () => {
     console.error("Fehler beim Laden der Posts:", error);
     return [];
   }
+};
+
+export const loadFeed = async (userId: string) => {
+  if (false) {
+    const posts = await loadPostsFromDevice();
+    return posts;
+  }
+  const posts = await fetchPostsByUser(userId);
 };

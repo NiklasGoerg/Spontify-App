@@ -15,6 +15,7 @@ import {
   addFriend,
   removeFriend,
 } from "../api/friends";
+import { Link } from "expo-router";
 
 const FriendManagementScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +75,14 @@ const FriendManagementScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Link href="/">
+                <Image
+                  source={require("@/assets/images/logo.png")}
+                  style={styles.logo}
+                />
+              </Link>
       {/* Suchfeld */}
+
       <TextInput
         style={styles.searchInput}
         placeholder="Freunde suchen..."
@@ -214,6 +222,11 @@ const styles = StyleSheet.create({
   removeButtonText: {
     color: "#fff",
     fontSize: 14,
+  },
+  logo: {
+    width: 100,
+    height: 40,
+    resizeMode: "contain",
   },
 });
 
