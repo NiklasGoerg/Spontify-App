@@ -76,11 +76,11 @@ const FriendManagementScreen = () => {
   return (
     <View style={styles.container}>
       <Link href="/">
-                <Image
-                  source={require("@/assets/images/logo.png")}
-                  style={styles.logo}
-                />
-              </Link>
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={styles.logo}
+        />
+      </Link>
       {/* Suchfeld */}
 
       <TextInput
@@ -104,7 +104,9 @@ const FriendManagementScreen = () => {
               }}
               style={styles.profileImage}
             />
-            <Text style={styles.friendText}>{item.friend_name || "Unbekannt"}</Text>
+            <Text style={styles.friendText}>
+              {item.friend_name || "Unbekannt"}
+            </Text>
             <TouchableOpacity
               onPress={() => handleRemoveFriend(item.id)}
               style={styles.removeButton}
@@ -142,13 +144,25 @@ const FriendManagementScreen = () => {
                       onPress={() =>
                         alreadyFriend
                           ? handleRemoveFriend(
-                              friends.find((f) => f.friend_id === item.id)?.id || ""
+                              friends.find((f) => f.friend_id === item.id)
+                                ?.id || "",
                             )
-                          : handleAddFriend(item.id, item.full_name || item.email)
+                          : handleAddFriend(
+                              item.id,
+                              item.full_name || item.email,
+                            )
                       }
-                      style={alreadyFriend ? styles.removeButton : styles.addButton}
+                      style={
+                        alreadyFriend ? styles.removeButton : styles.addButton
+                      }
                     >
-                      <Text style={alreadyFriend ? styles.removeButtonText : styles.addButtonText}>
+                      <Text
+                        style={
+                          alreadyFriend
+                            ? styles.removeButtonText
+                            : styles.addButtonText
+                        }
+                      >
                         {alreadyFriend ? "REMOVE" : "ADD"}
                       </Text>
                     </TouchableOpacity>

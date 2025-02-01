@@ -26,12 +26,12 @@ export default function ChallengeScreen() {
     const loadChallenge = async () => {
       const userPreferences = await fetchPreferences(); // Hole die Präferenzen des Nutzers
       const preferences = Object.keys(userPreferences).filter(
-        (key) => userPreferences[key]
+        (key) => userPreferences[key],
       ); // Nur aktivierte Präferenzen
       const challenge = await getRandomChallenge(preferences);
       setDailyChallenge(challenge);
     };
-  
+
     loadChallenge();
   }, []);
 
@@ -41,14 +41,10 @@ export default function ChallengeScreen() {
 
   const compressImage = async (uri: string) => {
     try {
-      const result = await ImageManipulator.manipulateAsync(
-        uri,
-        [],
-        {
-          compress: 0.7, // Reduziert die Qualität auf 70%
-          format: ImageManipulator.SaveFormat.JPEG,
-        }
-      );
+      const result = await ImageManipulator.manipulateAsync(uri, [], {
+        compress: 0.7, // Reduziert die Qualität auf 70%
+        format: ImageManipulator.SaveFormat.JPEG,
+      });
       console.log("Komprimierte URI:", result.uri);
       return result.uri;
     } catch (err) {
@@ -57,25 +53,30 @@ export default function ChallengeScreen() {
     }
   };
 
-
   const uploadToSupabase = async (uri: string) => {
     try {
       console.log("Start Upload mit URI:", uri);
-  
+
       // Prüfe, ob der Benutzer angemeldet ist
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-  
+
       if (authError || !user) {
-        Alert.alert("Fehler", "Nur angemeldete Benutzer können Dateien hochladen.");
-        console.error("Fehler bei der Benutzerüberprüfung:", authError?.message);
+        Alert.alert(
+          "Fehler",
+          "Nur angemeldete Benutzer können Dateien hochladen.",
+        );
+        console.error(
+          "Fehler bei der Benutzerüberprüfung:",
+          authError?.message,
+        );
         return null;
       }
-  
+
       console.log("Angemeldeter Benutzer:", user.email);
-  
+
       // Lade die Datei von der URI
       const response = await fetch(uri);
       if (!response.ok) {
@@ -83,10 +84,10 @@ export default function ChallengeScreen() {
         Alert.alert("Fehler", "Die Datei konnte nicht gelesen werden.");
         return null;
       }
-  
+
       const blob = await response.blob();
       console.log("Blob erstellt, Größe:", blob.size);
-  
+
       // Konvertiere den Blob in einen ArrayBuffer mit FileReader
       const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
         const reader = new FileReader();
@@ -95,10 +96,10 @@ export default function ChallengeScreen() {
         reader.readAsArrayBuffer(blob);
       });
       console.log("ArrayBuffer erstellt, Größe:", arrayBuffer.byteLength);
-  
+
       // Erstelle einen Dateinamen (z. B. userID/timestamp.jpg)
       const fileName = `images/${user.id}/${Date.now()}.jpg`;
-  
+
       // Lade die Datei zu Supabase hoch
       const { data, error } = await supabase.storage
         .from("images")
@@ -107,66 +108,70 @@ export default function ChallengeScreen() {
           cacheControl: "3600", // Optional: Caching
           upsert: true, // Überschreiben, falls vorhanden
         });
-  
+
       if (error) {
         console.error("Fehler beim Hochladen:", error.message);
         Alert.alert("Upload fehlgeschlagen", error.message);
         return null;
       }
-  
+
       console.log("Upload erfolgreich:", data);
-  
+
       // Hole die öffentliche URL
       /*const { publicUrl } = supabase.storage
         .from("images")
         .getPublicUrl(data.path);
         */
 
-      const baseUrl = "xbszoksbpwbmvjfjjcjl.supabase.co/storage/v1/object/public/images/";
+      const baseUrl =
+        "xbszoksbpwbmvjfjjcjl.supabase.co/storage/v1/object/public/images/";
       const publicUrl = `${baseUrl}${data.path}`;
 
-      console.log("data.path:", data.path)
+      console.log("data.path:", data.path);
       console.log("Öffentliche URL:", publicUrl);
 
       return publicUrl;
     } catch (err) {
       console.error("Fehler beim Hochladen:", err);
-      Alert.alert("Upload fehlgeschlagen", "Ein unerwarteter Fehler ist aufgetreten.");
+      Alert.alert(
+        "Upload fehlgeschlagen",
+        "Ein unerwarteter Fehler ist aufgetreten.",
+      );
       return null;
     }
   };
-  
-  
-  
 
   const handleOpenCamera = async () => {
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
-  
+
     if (error || !user) {
-      Alert.alert("Fehler", "Nur angemeldete Benutzer können diese Funktion nutzen.");
+      Alert.alert(
+        "Fehler",
+        "Nur angemeldete Benutzer können diese Funktion nutzen.",
+      );
       console.error("Fehler bei der Benutzerüberprüfung:", error?.message);
       return;
     }
-  
+
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (permissionResult.granted === false) {
       Alert.alert(
         "Berechtigung benötigt",
-        "Du musst die Kamera-Berechtigung erteilen!"
+        "Du musst die Kamera-Berechtigung erteilen!",
       );
       return;
     }
-  
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.canceled) {
       Alert.alert(
         "Foto bestätigen",
@@ -181,26 +186,33 @@ export default function ChallengeScreen() {
             onPress: async () => {
               if (result.assets[0].uri) {
                 console.log("Foto URI:", result.assets[0].uri);
-  
+
                 // Hochladen des Bildes
-                const uploadedUrl = await uploadToSupabase(result.assets[0].uri);
+                const uploadedUrl = await uploadToSupabase(
+                  result.assets[0].uri,
+                );
                 console.log("uploadedUrl__:", uploadedUrl);
 
                 if (uploadedUrl) {
                   setPhotoUri(uploadedUrl); // Setze die URL
-                  Alert.alert("Upload erfolgreich", "Das Foto wurde hochgeladen!");
+                  Alert.alert(
+                    "Upload erfolgreich",
+                    "Das Foto wurde hochgeladen!",
+                  );
                 } else {
-                  Alert.alert("Upload fehlgeschlagen", "Das Foto konnte nicht hochgeladen werden.");
+                  Alert.alert(
+                    "Upload fehlgeschlagen",
+                    "Das Foto konnte nicht hochgeladen werden.",
+                  );
                 }
               }
             },
           },
         ],
-        { cancelable: false }
+        { cancelable: false },
       );
     }
   };
-  
 
   return (
     <View style={styles.container}>
@@ -211,7 +223,7 @@ export default function ChallengeScreen() {
             Challenge erfolgreich abgeschlossen!
           </Text>
           <Link href="/" style={styles.finishButton}>
-            <TouchableOpacity >
+            <TouchableOpacity>
               <Text style={styles.buttonText}>Accept Challenge</Text>
             </TouchableOpacity>
           </Link>
@@ -338,7 +350,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
-  
+
   finishButton: {
     backgroundColor: "#4CAF50",
     width: "100%",

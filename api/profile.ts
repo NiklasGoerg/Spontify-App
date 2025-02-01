@@ -14,7 +14,10 @@ export const updateUsername = async (username: string) => {
   });
 
   if (error) {
-    console.error("Fehler beim Aktualisieren des Benutzernamens:", error.message);
+    console.error(
+      "Fehler beim Aktualisieren des Benutzernamens:",
+      error.message,
+    );
     return false;
   }
 

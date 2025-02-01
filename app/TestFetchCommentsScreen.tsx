@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Alert, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  Button,
+  Alert,
+  Text,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import { fetchComments } from "../api/posts"; // Importiere die fetchComments Funktion
 
 const FetchCommentsTest = () => {
@@ -29,9 +37,9 @@ const FetchCommentsTest = () => {
         onChangeText={setPostId}
         placeholder="Gib die Post ID ein"
       />
-      
+
       <Button title="Kommentare abrufen" onPress={handleFetchComments} />
-      
+
       <FlatList
         data={comments}
         keyExtractor={(item, index) => index.toString()}

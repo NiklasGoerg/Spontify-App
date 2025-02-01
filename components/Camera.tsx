@@ -50,19 +50,18 @@ export default function CameraComponent({
       const success = await saveChallengePhoto(
         photoUri,
         "challenge-id-here", // Ersetze dies durch die echte Challenge-ID
-        "Beschreibung zur Challenge" // Beschreibung der Challenge
+        "Beschreibung zur Challenge", // Beschreibung der Challenge
       );
-  
+
       if (success) {
         alert("Foto erfolgreich gespeichert!");
         onClose();
       } else {
-        console.log("Fehler beim Speichern des Fotos. :(")
+        console.log("Fehler beim Speichern des Fotos. :(");
         alert("Fehler beim Speichern des Fotos.");
       }
     }
   };
-  
 
   return (
     <View style={styles.container}>

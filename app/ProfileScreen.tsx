@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Link } from "expo-router"; // Für die Verlinkung
 import { supabase } from "../supabaseClient";
 
@@ -79,7 +87,10 @@ const ProfileScreen = () => {
         .eq("id", user.data.user.id);
 
       if (error) {
-        console.error("Fehler beim Aktualisieren des Benutzernamens:", error.message);
+        console.error(
+          "Fehler beim Aktualisieren des Benutzernamens:",
+          error.message,
+        );
         Alert.alert("Fehler", "Benutzername konnte nicht aktualisiert werden.");
         setIsSaving(false);
         return;
@@ -131,7 +142,9 @@ const ProfileScreen = () => {
           <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
           <Link href="/ChallengeTypesScreen" asChild>
             <TouchableOpacity style={styles.challengeButton}>
-              <Text style={styles.challengeButtonText}>Challenge preference</Text>
+              <Text style={styles.challengeButtonText}>
+                Challenge preference
+              </Text>
               <Text style={styles.arrow}>&gt;</Text>
             </TouchableOpacity>
           </Link>

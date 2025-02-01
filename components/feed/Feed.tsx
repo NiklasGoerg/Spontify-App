@@ -3,25 +3,63 @@ import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { fetchPosts } from "@/services/api";
 import Post from "./Post";
 import { useDispatch, useSelector } from "react-redux";
-import { setPosts } from "@/store/feedSlice";
+import {
+  selectStructuredPosts,
+  setChallenges,
+  setFriends,
+  setPosts,
+  setStructuredPosts,
+} from "@/store/feedSlice";
 import { PostType } from "@/types";
+import { fetchChallenges } from "@/api/challenges";
+import { fetchFriends } from "@/api/friends";
+import {
+  fetchFriendsPosts,
+  fetchPostsByUser,
+  savePost,
+  savePostsOnDevice,
+} from "@/api/posts";
+import { supabase } from "@/supabaseClient";
 
 const Feed = () => {
   const dispatch = useDispatch();
-  const posts = useSelector(
-    (state: { feed: { posts: PostType[] } }) => state.feed.posts,
+  const { posts, friends, challenges } = useSelector(
+    (state: any) => state.feed,
   );
+
+  const [structuredPosts, setStructuredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const loadData = async () => {
+      const user = await supabase.auth.getUser();
+      const friendsData = await fetchFriends();
+      console.log("friends: ", friendsData);
+
+      dispatch(setFriends(friendsData));
+
+      const posts = await fetchPostsByUser(user.data.user.id);
+      dispatch(setPosts(posts));
+      console.log("posts: ", posts);
+
+      const challenges = await fetchChallenges();
+      dispatch(setChallenges(challenges));
+      console.log("challenges: ", challenges, friends);
+
+      setStructuredPosts(selectStructuredPosts(posts, friendsData, challenges));
+
+      savePostsOnDevice(structuredPosts);
+      return structuredPosts;
+    };
+
     const loadPosts = async () => {
       try {
-        const fetchedPosts = await fetchPosts();
-        dispatch(setPosts(fetchedPosts));
+        await loadData();
       } catch (err) {
-        setError("Failed to load posts.");
+        console.error("Failed to load posts:", err);
       } finally {
+        console.log("finally", structuredPosts);
         setLoading(false);
       }
     };
@@ -39,9 +77,7 @@ const Feed = () => {
 
   return (
     <View style={styles.container}>
-      {posts.map((post) => (
-        <Post key={post.id} post={post} />
-      ))}
+      {structuredPosts?.map((post: any) => <Post key={post.id} post={post} />)}
     </View>
   );
 };

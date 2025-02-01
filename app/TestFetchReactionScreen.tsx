@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Alert, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  Button,
+  Alert,
+  Text,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import { fetchReactions } from "../api/posts"; // Importiere die fetchReactions Funktion
 
 const FetchReactionsTest = () => {
@@ -29,16 +37,18 @@ const FetchReactionsTest = () => {
         onChangeText={setPostId}
         placeholder="Gib die Post ID ein"
       />
-      
+
       <Button title="Reaktionen abrufen" onPress={handleFetchReactions} />
-      
+
       <FlatList
         data={reactions}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.reactionContainer}>
             <Text style={styles.reactionUser}>User ID: {item.user_id}</Text>
-            <Text style={styles.reactionType}>Reaktion: {item.reaction_type}</Text>
+            <Text style={styles.reactionType}>
+              Reaktion: {item.reaction_type}
+            </Text>
           </View>
         )}
       />

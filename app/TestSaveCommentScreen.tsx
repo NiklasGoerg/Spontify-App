@@ -34,21 +34,39 @@ const SaveCommentTest = () => {
       }
     } catch (err) {
       console.error("Unerwarteter Fehler:", err);
-      Alert.alert("Fehler", "Unerwarteter Fehler beim Speichern des Kommentars");
+      Alert.alert(
+        "Fehler",
+        "Unerwarteter Fehler beim Speichern des Kommentars",
+      );
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Post ID:</Text>
-      <TextInput style={styles.input} value={postId} onChangeText={setPostId} placeholder="Gib die Post ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={postId}
+        onChangeText={setPostId}
+        placeholder="Gib die Post ID ein"
+      />
+
       <Text style={styles.label}>User ID:</Text>
-      <TextInput style={styles.input} value={userId} onChangeText={setUserId} placeholder="Gib die User ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={userId}
+        onChangeText={setUserId}
+        placeholder="Gib die User ID ein"
+      />
+
       <Text style={styles.label}>Kommentar:</Text>
-      <TextInput style={styles.input} value={commentContent} onChangeText={setCommentContent} placeholder="Gib deinen Kommentar ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={commentContent}
+        onChangeText={setCommentContent}
+        placeholder="Gib deinen Kommentar ein"
+      />
+
       <Button title="Kommentar speichern" onPress={saveComment} />
     </View>
   );

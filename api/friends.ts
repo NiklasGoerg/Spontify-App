@@ -42,14 +42,12 @@ export const addFriend = async (friendId: string, friendName: string) => {
   const user = await supabase.auth.getUser();
   if (!user?.data?.user?.id) return false;
 
-  const { error } = await supabase
-    .from("friends")
-    .insert({
-      user_id: user.data.user.id,
-      friend_id: friendId,
-      friend_name: friendName,
-      status: "active",
-    });
+  const { error } = await supabase.from("friends").insert({
+    user_id: user.data.user.id,
+    friend_id: friendId,
+    friend_name: friendName,
+    status: "active",
+  });
 
   if (error) {
     console.error("Fehler beim Hinzufügen eines Freundes:", error.message);

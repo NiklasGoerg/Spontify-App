@@ -41,7 +41,7 @@ const FeedScreen = ({ navigation }: { navigation: any }) => {
         </Link>
       </View>
       <ScrollView contentContainerStyle={styles.feedContainer}>
-        <Feed posts={posts} />
+        <Feed />
       </ScrollView>
       <ChallengeButton />
     </View>

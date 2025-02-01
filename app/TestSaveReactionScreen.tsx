@@ -27,14 +27,29 @@ const SaveReactionTest = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Post ID:</Text>
-      <TextInput style={styles.input} value={postId} onChangeText={setPostId} placeholder="Gib die Post ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={postId}
+        onChangeText={setPostId}
+        placeholder="Gib die Post ID ein"
+      />
+
       <Text style={styles.label}>User ID:</Text>
-      <TextInput style={styles.input} value={userId} onChangeText={setUserId} placeholder="Gib die User ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={userId}
+        onChangeText={setUserId}
+        placeholder="Gib die User ID ein"
+      />
+
       <Text style={styles.label}>Reaktionstyp:</Text>
-      <TextInput style={styles.input} value={reactionType} onChangeText={setReactionType} placeholder="Gib die Reaktion ein (z.B. Like, Love)" />
-      
+      <TextInput
+        style={styles.input}
+        value={reactionType}
+        onChangeText={setReactionType}
+        placeholder="Gib die Reaktion ein (z.B. Like, Love)"
+      />
+
       <Button title="Reaktion speichern" onPress={handleSaveReaction} />
     </View>
   );

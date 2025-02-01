@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { PostType, User, Challenge} from "../types";
+import { PostType, User, Challenge } from "../types";
 
 const initialPosts: PostType[] = [];
 const initialUser: User | null = null;
@@ -18,36 +18,64 @@ const feedSlice = createSlice({
   reducers: {
     setPosts: (state, action: PayloadAction<PostType[]>) => {
       state.posts = action.payload;
+      feedSlice.caseReducers.setStructuredPosts(state);
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+      feedSlice.caseReducers.setStructuredPosts(state);
     },
     setFriends: (state, action: PayloadAction<User[]>) => {
       state.friends = action.payload;
+      feedSlice.caseReducers.setStructuredPosts(state);
     },
     setChallenges: (state, action: PayloadAction<Challenge[]>) => {
       state.challenges = action.payload;
+      feedSlice.caseReducers.setStructuredPosts(state);
     },
     setStructuredPosts: (state) => {
       const structuredPosts = state.posts.map((post) => {
-        const user = state.friends.find((friend) => friend.id === post.user_id);
-        const challenge = state.challenges.find((challenge) => challenge.id === post.challenge_id);
+        const user = state.friends.find(
+          (friend) => friend.friend_id === post.user_id,
+        );
+        const challenge = state.challenges.find(
+          (challenge) => challenge.id === post.challenge_id,
+        );
         return { ...post, user, challenge };
       });
+      console.log(
+        "structuredPosts: ",
+        structuredPosts,
+        state.friends,
+        state.challenges,
+      );
       state.structuredPosts = structuredPosts;
-    }
+    },
   },
 });
 
-export const { setPosts, setUser, setFriends, setChallenges, setStructuredPosts } = feedSlice.actions;
+export const {
+  setPosts,
+  setUser,
+  setFriends,
+  setChallenges,
+  setStructuredPosts,
+} = feedSlice.actions;
 
 // Selector für structuredPosts
-export const selectStructuredPosts = (state: any) => {
-  return state.feed.posts.map((post: any) => {
-    const user = state.feed.friends.find((friend: any) => friend.id === post.user_id);
-    const challenge = state.feed.challenges.find((challenge: any) => challenge.id === post.challenge_id);
-    return { ...post, user, challenge };
+export const selectStructuredPosts = (
+  posts: any[],
+  friends: any[],
+  challenges: any[],
+) => {
+  const feed = posts.map((post) => {
+    const user = friends.find((friend) => friend.friend_id === post.user_id);
+    const challenge = challenges.find(
+      (challenge) => challenge.id === post.challenge_id,
+    );
+    return { ...post, user, challenge, reactions: [], comments: [] };
   });
+  console.log("selectStructuredPosts: ", feed, friends, challenges);
+  return feed;
 };
 
 export default feedSlice.reducer;

@@ -30,7 +30,7 @@ export default function HomeScreen() {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user || null);
-      }
+      },
     );
 
     const loadData = async () => {

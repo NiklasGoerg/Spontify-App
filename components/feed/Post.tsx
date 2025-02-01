@@ -17,6 +17,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post }) => {
   const [reactionsVisible, setReactionsVisible] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
+  console.log("Post: ", post);
 
   const toggleReactions = () => {
     if (reactionsVisible) {
@@ -67,33 +68,33 @@ const Post: React.FC<PostProps> = ({ post }) => {
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <Image
-          source={{ uri: post.user.profilePictureUrl }}
+          source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
           style={styles.profilePicture}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.username}>{post.user.username}</Text>
-          <Text style={styles.location}>{post.location}</Text>
+          <Text style={styles.username}>{post.user.friend_name}</Text>
+          <Text style={styles.location}>{"Dresden"}</Text>
         </View>
       </View>
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: post.imageUrl }}
+          source={{ uri: `https://${post.photo_url}` }}
           style={styles.image}
           resizeMode="contain"
         />
         <View style={styles.reactionsContainer}>
-        {post.reactions.map((reaction, index) => (
-          <Text
-            key={index}
-            style={[
-              styles.reactionEmoji,
-              { left: index * 10, top: index * 5 },
-            ]}
-          >
-            {reaction.reaction}
-          </Text>
-        ))}
-      </View>
+          {post.reactions.map((reaction, index) => (
+            <Text
+              key={index}
+              style={[
+                styles.reactionEmoji,
+                { left: index * 10, top: index * 5 },
+              ]}
+            >
+              {reaction.reaction}
+            </Text>
+          ))}
+        </View>
         <TouchableOpacity
           style={styles.reactionToggleButton}
           onPress={toggleReactions}
@@ -106,7 +107,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </Animated.View>
         )}
       </View>
-      <Text style={styles.challenge}>Challenge: {post.challenge}</Text>
+      <Text style={styles.challenge}>Challenge: {post.challenge.title}</Text>
       <Text style={styles.date}>
         {new Date(post.submittedAt).toLocaleDateString()}
       </Text>

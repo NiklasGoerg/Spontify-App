@@ -29,17 +29,37 @@ const SavePostTest = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>User ID:</Text>
-      <TextInput style={styles.input} value={userId} onChangeText={setUserId} placeholder="Gib die User ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={userId}
+        onChangeText={setUserId}
+        placeholder="Gib die User ID ein"
+      />
+
       <Text style={styles.label}>Challenge ID:</Text>
-      <TextInput style={styles.input} value={challengeId} onChangeText={setChallengeId} placeholder="Gib die Challenge ID ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={challengeId}
+        onChangeText={setChallengeId}
+        placeholder="Gib die Challenge ID ein"
+      />
+
       <Text style={styles.label}>Foto URL:</Text>
-      <TextInput style={styles.input} value={photoUrl} onChangeText={setPhotoUrl} placeholder="Gib die Foto-URL ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={photoUrl}
+        onChangeText={setPhotoUrl}
+        placeholder="Gib die Foto-URL ein"
+      />
+
       <Text style={styles.label}>Beschreibung:</Text>
-      <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Gib eine Beschreibung ein" />
-      
+      <TextInput
+        style={styles.input}
+        value={description}
+        onChangeText={setDescription}
+        placeholder="Gib eine Beschreibung ein"
+      />
+
       <Button title="Post speichern" onPress={handleSavePost} />
     </View>
   );

@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Alert, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  Button,
+  Alert,
+  Text,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import { fetchPostsByUser } from "../api/posts"; // Importiere die fetchPostsByUser Funktion
 
 const FetchPostsByUserTest = () => {
@@ -29,16 +37,18 @@ const FetchPostsByUserTest = () => {
         onChangeText={setUserId}
         placeholder="Gib die User ID ein"
       />
-      
+
       <Button title="Beiträge abrufen" onPress={handleFetchPosts} />
-      
+
       <FlatList
         data={posts}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.postContainer}>
             <Text style={styles.postUser}>User ID: {item.user_id}</Text>
-            <Text style={styles.postChallenge}>Challenge ID: {item.challenge_id}</Text>
+            <Text style={styles.postChallenge}>
+              Challenge ID: {item.challenge_id}
+            </Text>
             <Text style={styles.postUrl}>Bild URL: {item.photo_url}</Text>
           </View>
         )}

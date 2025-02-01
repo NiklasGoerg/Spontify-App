@@ -32,12 +32,13 @@ export const savePreferences = async (preferences: any) => {
   const user = await supabase.auth.getUser();
   if (!user?.data?.user?.id) return;
 
-  const { error } = await supabase
-    .from("challenge_preferences")
-    .upsert({
+  const { error } = await supabase.from("challenge_preferences").upsert(
+    {
       user_id: user.data.user.id,
       preferences,
-    }, { onConflict: ["user_id"] });
+    },
+    { onConflict: ["user_id"] },
+  );
 
   if (error) {
     console.error("Fehler beim Speichern der Präferenzen:", error);

@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { fetchPreferences, savePreferences } from "../api/preferences";
-
 
 const challengeTypes = [
   { key: "fitness", label: "Fitness" },
@@ -44,7 +49,10 @@ export default function ChallengeTypesScreen() {
     <View style={styles.container}>
       {/* Header mit Zurück-Button */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Challenge Typen</Text>
@@ -143,5 +151,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },  
+  },
 });
