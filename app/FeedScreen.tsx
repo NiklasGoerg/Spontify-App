@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -7,21 +7,11 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useSelector } from "react-redux";
 import Feed from "@/components/feed/Feed";
-import { PostType } from "../types";
 import ChallengeButton from "@/components/feed/challengeButton";
 import { Link } from "expo-router"; // Importiere Link
-import { setOnline } from "@/store/feedSlice";
 
-const FeedScreen = (online: boolean) => {
-  useEffect(() => {
-    setOnline(online);
-    if (!online) {
-      Alert.alert("Keine Internetverbindung");
-    }
-  }, []);
-
+const FeedScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>

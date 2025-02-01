@@ -8,6 +8,8 @@ import {
   setFriends,
   setChallenges,
 } from "../store/feedSlice";
+import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system";
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
@@ -222,11 +224,42 @@ export const fetchFriendsPosts = async (friends: Friend[]) => {
   return posts;
 };
 
-export const savePostsOnDevice = async (posts: any[]) => {
+export const savePostsOnDevice = async (posts: any[]): Promise<any[]> => {
   try {
-    const jsonData = JSON.stringify(posts);
-    await AsyncStorage.setItem("posts", jsonData);
-    console.log("Posts erfolgreich gespeichert!", jsonData);
+    const updatedPosts = await Promise.all(
+      posts.map(async (post) => {
+        if (!post.photo_url) return post;
+
+        if (Platform.OS === "android") {
+          // 📱 Android: Speichert mit FileSystem
+          const fileUri = `${FileSystem.documentDirectory}${post.user_id}.jpg`;
+          const fileInfo = await FileSystem.getInfoAsync(fileUri);
+
+          if (!fileInfo.exists) {
+            await FileSystem.downloadAsync(post.photo_url, fileUri);
+          }
+
+          return { ...post, photo_url: fileUri };
+        } else {
+          // 🌐 Web + iOS (Expo Go) → Speichern als Base64
+          const response = await fetch(post.photo_url);
+          const blob = await response.blob();
+          const reader = new FileReader();
+
+          return new Promise((resolve) => {
+            reader.onloadend = async () => {
+              const base64data = reader.result; // Base64-String
+              await AsyncStorage.setItem(post.user_id, base64data as string);
+              resolve({ ...post, photo_url: post.user_id }); // Speichert ID für Lookup
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      }),
+    );
+
+    await AsyncStorage.setItem("posts", JSON.stringify(updatedPosts));
+    return updatedPosts;
   } catch (error) {
     console.error("Fehler beim Speichern der Posts:", error);
   }
@@ -235,8 +268,26 @@ export const savePostsOnDevice = async (posts: any[]) => {
 export const loadPostsFromDevice = async () => {
   try {
     const jsonData = await AsyncStorage.getItem("posts");
-    console.log("Offline Posts erfolgreich geladen!", JSON.parse(jsonData));
-    return JSON.parse(jsonData);
+    if (!jsonData) return [];
+
+    let posts = JSON.parse(jsonData);
+
+    if (Platform.OS !== "android") {
+      // 🌐 Web + iOS (Expo Go) → Lade Bilder als Base64
+      posts = await Promise.all(
+        posts.map(async (post: any) => {
+          if (post.photo_url) {
+            const base64data = await AsyncStorage.getItem(post.photo_url);
+            if (base64data) {
+              return { ...post, photo_url: base64data };
+            }
+          }
+          return post;
+        }),
+      );
+    }
+
+    return posts;
   } catch (error) {
     console.error("Fehler beim Laden der Posts:", error);
     return [];

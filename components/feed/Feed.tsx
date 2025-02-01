@@ -1,31 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, StyleSheet, Alert } from "react-native";
-import { fetchPosts } from "@/services/api";
-import Post from "./Post";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  selectStructuredPosts,
   setChallenges,
   setFriends,
   setOnline,
   setPosts,
-  setStructuredPosts,
 } from "@/store/feedSlice";
-import { PostType } from "@/types";
-import {
-  fetchChallenges,
-  loadChallengesFromDevice,
-  saveChallengesOnDevice,
-} from "@/api/challenges";
+import { fetchPostsByUser, loadPostsFromDevice } from "@/api/posts";
+import { fetchChallenges } from "@/api/challenges";
 import { fetchFriends } from "@/api/friends";
-import {
-  fetchFriendsPosts,
-  fetchPostsByUser,
-  loadPostsFromDevice,
-  savePost,
-  savePostsOnDevice,
-} from "@/api/posts";
 import { supabase } from "@/supabaseClient";
+import NetInfo from "@react-native-community/netinfo"; // Importiere NetInfo
+import Post from "./Post";
 
 const Feed = () => {
   const dispatch = useDispatch();
@@ -33,22 +20,34 @@ const Feed = () => {
     (state: any) => state.feed,
   );
 
-  const [structuredPosts, setStructuredPosts] = useState([]);
+  const [structuredPosts, setStructuredPosts]: any[] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Setze den initialen Status für online
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Überwache den Netzwerkstatus
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(state.isConnected); // Setze den Online-Status auf Basis des NetInfo State
+      dispatch(setOnline(state.isConnected)); // Optional: Wenn du Redux dafür nutzt
+    });
+
+    // Cleanup bei der Entladung des Components
+    return () => unsubscribe();
+  }, [dispatch]);
+
   useEffect(() => {
     const loadData = async () => {
-      setOnline(navigator.onLine);
-      console.log("navigator online: ", navigator.onLine);
-      console.log("online: ", online);
-      if (!navigator.onLine) {
-        Alert.alert("Keine Internetverbindung");
+      if (!isOnline) {
+        // Offline-Modus: Lade Posts aus dem Gerät
         const offlinePosts = await loadPostsFromDevice();
         setStructuredPosts(offlinePosts);
-        console.log("structuredPosts: ", offlinePosts, structuredPosts);
+        console.log("Offline Posts geladen: ", offlinePosts);
         return;
       } else {
+        // Online-Modus: Lade Posts und Challenges von der API
         const user = await supabase.auth.getUser();
         const friendsData = await fetchFriends();
         console.log("friends: ", friendsData);
@@ -61,31 +60,20 @@ const Feed = () => {
 
         const challenges = await fetchChallenges();
         dispatch(setChallenges(challenges));
-        console.log("challenges: ", challenges, friends);
+        console.log("challenges: ", challenges);
 
-        setStructuredPosts(
-          selectStructuredPosts(posts, friendsData, challenges),
-        );
-
-        savePostsOnDevice(structuredPosts);
-        saveChallengesOnDevice(challenges);
-        return structuredPosts;
+        setStructuredPosts(posts); // Setze Posts in den State
       }
     };
 
-    const loadPosts = async () => {
-      try {
-        await loadData();
-      } catch (err) {
-        console.error("Failed to load posts:", err);
-      } finally {
-        console.log("finally", structuredPosts);
+    loadData()
+      .catch((err) => {
+        console.error("Fehler beim Laden der Daten:", err);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    };
-
-    loadPosts();
-  }, [dispatch]);
+      });
+  }, [dispatch, isOnline]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
