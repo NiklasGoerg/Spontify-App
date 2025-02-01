@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../supabaseClient";
 
 // Hole eine zufällige Challenge basierend auf den Präferenzen
@@ -37,4 +38,24 @@ export const fetchChallenges = async () => {
 
   console.log("Challenges erfolgreich abgerufen:", data);
   return data || [];
+};
+
+export const saveChallengesOnDevice = async (challenges: any[]) => {
+  try {
+    const jsonData = JSON.stringify(challenges);
+    await AsyncStorage.setItem("challenges", jsonData);
+    console.log("challenges erfolgreich gespeichert!", jsonData);
+  } catch (error) {
+    console.error("Fehler beim Speichern der challenges:", error);
+  }
+};
+
+export const loadChallengesFromDevice = async () => {
+  try {
+    const jsonData = await AsyncStorage.getItem("challenges");
+    return jsonData != null ? JSON.parse(jsonData) : [];
+  } catch (error) {
+    console.error("Fehler beim Laden der challenges:", error);
+    return [];
+  }
 };

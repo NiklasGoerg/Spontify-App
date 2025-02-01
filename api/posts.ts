@@ -235,7 +235,8 @@ export const savePostsOnDevice = async (posts: any[]) => {
 export const loadPostsFromDevice = async () => {
   try {
     const jsonData = await AsyncStorage.getItem("posts");
-    return jsonData != null ? JSON.parse(jsonData) : [];
+    console.log("Offline Posts erfolgreich geladen!", JSON.parse(jsonData));
+    return JSON.parse(jsonData);
   } catch (error) {
     console.error("Fehler beim Laden der Posts:", error);
     return [];

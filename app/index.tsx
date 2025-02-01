@@ -12,16 +12,24 @@ export default function HomeScreen() {
   const [email, setEmail] = useState(""); // E-Mail des Benutzers
   const [password, setPassword] = useState(""); // Passwort des Benutzers
   const [user, setUser] = useState(null); // Benutzer-Session
+  const [online, setOnline] = useState(false); // Benutzer-Session
 
   // Authentifizierungsstatus überwachen
   useEffect(() => {
     const fetchSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Fehler beim Abrufen der Session:", error.message);
-        setUser(null);
-      } else {
-        setUser(data?.session?.user || null);
+      if (!navigator.onLine) {
+        console.log("Keine Internetverbindung");
+        setOnline(false);
+        return;
+      } else if (navigator.onLine) {
+        setOnline(true);
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Fehler beim Abrufen der Session:", error.message);
+          setUser(null);
+        } else {
+          setUser(data?.session?.user || null);
+        }
       }
     };
 
@@ -96,7 +104,7 @@ export default function HomeScreen() {
     <Provider store={store}>
       <View style={styles.container}>
         {user ? (
-          <FeedScreen onSignOut={handleSignOut} /> // Feed anzeigen, wenn Benutzer angemeldet ist
+          <FeedScreen online={online} onSignOut={handleSignOut} /> // Feed anzeigen, wenn Benutzer angemeldet ist
         ) : (
           <LoginForm
             email={email}

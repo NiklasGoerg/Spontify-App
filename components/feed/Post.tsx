@@ -72,7 +72,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           style={styles.profilePicture}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.username}>{post.user.friend_name}</Text>
+          <Text style={styles.username}>{post.user?.friend_name}</Text>
           <Text style={styles.location}>{"Dresden"}</Text>
         </View>
       </View>
@@ -83,7 +83,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           resizeMode="contain"
         />
         <View style={styles.reactionsContainer}>
-          {post.reactions.map((reaction, index) => (
+          {post.reactions?.map((reaction, index) => (
             <Text
               key={index}
               style={[
@@ -107,7 +107,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </Animated.View>
         )}
       </View>
-      <Text style={styles.challenge}>Challenge: {post.challenge.title}</Text>
+      <Text style={styles.challenge}>Challenge: {post.challenge?.title}</Text>
       <Text style={styles.date}>
         {new Date(post.submittedAt).toLocaleDateString()}
       </Text>
@@ -121,6 +121,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
 const styles = StyleSheet.create({
   postContainer: {
+    width: "100%",
     marginBottom: 15,
     padding: 10,
     backgroundColor: "#1e1e1e",

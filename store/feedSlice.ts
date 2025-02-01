@@ -14,6 +14,7 @@ const feedSlice = createSlice({
     friends: initialFriends,
     challenges: initialChallenges,
     structuredPosts: [],
+    online: false,
   },
   reducers: {
     setPosts: (state, action: PayloadAction<PostType[]>) => {
@@ -42,13 +43,10 @@ const feedSlice = createSlice({
         );
         return { ...post, user, challenge };
       });
-      console.log(
-        "structuredPosts: ",
-        structuredPosts,
-        state.friends,
-        state.challenges,
-      );
       state.structuredPosts = structuredPosts;
+    },
+    setOnline: (state, action: PayloadAction<boolean>) => {
+      state.online = action.payload;
     },
   },
 });
@@ -59,6 +57,7 @@ export const {
   setFriends,
   setChallenges,
   setStructuredPosts,
+  setOnline,
 } = feedSlice.actions;
 
 // Selector für structuredPosts

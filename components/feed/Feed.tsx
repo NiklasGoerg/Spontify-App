@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { fetchPosts } from "@/services/api";
 import Post from "./Post";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,15 +7,21 @@ import {
   selectStructuredPosts,
   setChallenges,
   setFriends,
+  setOnline,
   setPosts,
   setStructuredPosts,
 } from "@/store/feedSlice";
 import { PostType } from "@/types";
-import { fetchChallenges } from "@/api/challenges";
+import {
+  fetchChallenges,
+  loadChallengesFromDevice,
+  saveChallengesOnDevice,
+} from "@/api/challenges";
 import { fetchFriends } from "@/api/friends";
 import {
   fetchFriendsPosts,
   fetchPostsByUser,
+  loadPostsFromDevice,
   savePost,
   savePostsOnDevice,
 } from "@/api/posts";
@@ -23,7 +29,7 @@ import { supabase } from "@/supabaseClient";
 
 const Feed = () => {
   const dispatch = useDispatch();
-  const { posts, friends, challenges } = useSelector(
+  const { posts, friends, challenges, online } = useSelector(
     (state: any) => state.feed,
   );
 
@@ -33,24 +39,38 @@ const Feed = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      const user = await supabase.auth.getUser();
-      const friendsData = await fetchFriends();
-      console.log("friends: ", friendsData);
+      setOnline(navigator.onLine);
+      console.log("navigator online: ", navigator.onLine);
+      console.log("online: ", online);
+      if (!navigator.onLine) {
+        Alert.alert("Keine Internetverbindung");
+        const offlinePosts = await loadPostsFromDevice();
+        setStructuredPosts(offlinePosts);
+        console.log("structuredPosts: ", offlinePosts, structuredPosts);
+        return;
+      } else {
+        const user = await supabase.auth.getUser();
+        const friendsData = await fetchFriends();
+        console.log("friends: ", friendsData);
 
-      dispatch(setFriends(friendsData));
+        dispatch(setFriends(friendsData));
 
-      const posts = await fetchPostsByUser(user.data.user.id);
-      dispatch(setPosts(posts));
-      console.log("posts: ", posts);
+        const posts = await fetchPostsByUser(user.data.user.id);
+        dispatch(setPosts(posts));
+        console.log("posts: ", posts);
 
-      const challenges = await fetchChallenges();
-      dispatch(setChallenges(challenges));
-      console.log("challenges: ", challenges, friends);
+        const challenges = await fetchChallenges();
+        dispatch(setChallenges(challenges));
+        console.log("challenges: ", challenges, friends);
 
-      setStructuredPosts(selectStructuredPosts(posts, friendsData, challenges));
+        setStructuredPosts(
+          selectStructuredPosts(posts, friendsData, challenges),
+        );
 
-      savePostsOnDevice(structuredPosts);
-      return structuredPosts;
+        savePostsOnDevice(structuredPosts);
+        saveChallengesOnDevice(challenges);
+        return structuredPosts;
+      }
     };
 
     const loadPosts = async () => {
