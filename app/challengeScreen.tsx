@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,30 +10,49 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { supabase } from "../supabaseClient";
-import * as FileSystem from "expo-file-system";
 import { getRandomChallenge } from "../api/challenges";
-import { useEffect } from "react";
 import { fetchPreferences } from "../api/preferences";
-
+import NetInfo from "@react-native-community/netinfo";
+import { uploadImageAndSavePost } from "../api/posts"; // Nutze nur uploadImageAndSavePost
+import { loadChallengesFromDevice } from "../api/challenges";
 import { Link } from "expo-router";
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [dailyChallenge, setDailyChallenge] = useState<any>(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const loadChallenge = async () => {
-      const userPreferences = await fetchPreferences(); // Hole die Präferenzen des Nutzers
-      const preferences = Object.keys(userPreferences).filter(
-        (key) => userPreferences[key],
-      ); // Nur aktivierte Präferenzen
-      const challenge = await getRandomChallenge(preferences);
-      setDailyChallenge(challenge);
+    const checkNetworkStatus = async () => {
+      const state = await NetInfo.fetch();
+      setIsOffline(!state.isConnected);
     };
 
+    const loadChallenge = async () => {
+      if (isOffline) {
+        const challenge = loadChallengesFromDevice();
+        setDailyChallenge(challenge);
+      } else {
+        const userPreferences = await fetchPreferences();
+        const preferences = Object.keys(userPreferences).filter(
+          (key) => userPreferences[key],
+        );
+        const challenge = await getRandomChallenge(preferences);
+        setDailyChallenge(challenge);
+      }
+    };
+
+    checkNetworkStatus();
     loadChallenge();
-  }, []);
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOffline(!state.isConnected);
+      loadChallenge();
+    });
+
+    return () => unsubscribe();
+  }, [isOffline]);
 
   const handleAcceptChallenge = () => {
     setIsChallengeAccepted(true);
@@ -42,102 +61,13 @@ export default function ChallengeScreen() {
   const compressImage = async (uri: string) => {
     try {
       const result = await ImageManipulator.manipulateAsync(uri, [], {
-        compress: 0.7, // Reduziert die Qualität auf 70%
+        compress: 0.7,
         format: ImageManipulator.SaveFormat.JPEG,
       });
-      console.log("Komprimierte URI:", result.uri);
       return result.uri;
     } catch (err) {
       console.error("Fehler bei der Komprimierung:", err);
-      return uri; // Falls die Komprimierung fehlschlägt, nutze die Original-URI
-    }
-  };
-
-  const uploadToSupabase = async (uri: string) => {
-    try {
-      console.log("Start Upload mit URI:", uri);
-
-      // Prüfe, ob der Benutzer angemeldet ist
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        Alert.alert(
-          "Fehler",
-          "Nur angemeldete Benutzer können Dateien hochladen.",
-        );
-        console.error(
-          "Fehler bei der Benutzerüberprüfung:",
-          authError?.message,
-        );
-        return null;
-      }
-
-      console.log("Angemeldeter Benutzer:", user.email);
-
-      // Lade die Datei von der URI
-      const response = await fetch(uri);
-      if (!response.ok) {
-        console.error("Fehler beim Abrufen der Datei:", response.statusText);
-        Alert.alert("Fehler", "Die Datei konnte nicht gelesen werden.");
-        return null;
-      }
-
-      const blob = await response.blob();
-      console.log("Blob erstellt, Größe:", blob.size);
-
-      // Konvertiere den Blob in einen ArrayBuffer mit FileReader
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as ArrayBuffer);
-        reader.onerror = (err) => reject(err);
-        reader.readAsArrayBuffer(blob);
-      });
-      console.log("ArrayBuffer erstellt, Größe:", arrayBuffer.byteLength);
-
-      // Erstelle einen Dateinamen (z. B. userID/timestamp.jpg)
-      const fileName = `images/${user.id}/${Date.now()}.jpg`;
-
-      // Lade die Datei zu Supabase hoch
-      const { data, error } = await supabase.storage
-        .from("images")
-        .upload(fileName, new Uint8Array(arrayBuffer), {
-          contentType: "image/jpeg", // Dateityp angeben
-          cacheControl: "3600", // Optional: Caching
-          upsert: true, // Überschreiben, falls vorhanden
-        });
-
-      if (error) {
-        console.error("Fehler beim Hochladen:", error.message);
-        Alert.alert("Upload fehlgeschlagen", error.message);
-        return null;
-      }
-
-      console.log("Upload erfolgreich:", data);
-
-      // Hole die öffentliche URL
-      /*const { publicUrl } = supabase.storage
-        .from("images")
-        .getPublicUrl(data.path);
-        */
-
-      const baseUrl =
-        "xbszoksbpwbmvjfjjcjl.supabase.co/storage/v1/object/public/images/";
-      const publicUrl = `${baseUrl}${data.path}`;
-
-      console.log("data.path:", data.path);
-      console.log("Öffentliche URL:", publicUrl);
-
-      return publicUrl;
-    } catch (err) {
-      console.error("Fehler beim Hochladen:", err);
-      Alert.alert(
-        "Upload fehlgeschlagen",
-        "Ein unerwarteter Fehler ist aufgetreten.",
-      );
-      return null;
+      return uri;
     }
   };
 
@@ -146,18 +76,16 @@ export default function ChallengeScreen() {
       data: { user },
       error,
     } = await supabase.auth.getUser();
-
     if (error || !user) {
       Alert.alert(
         "Fehler",
         "Nur angemeldete Benutzer können diese Funktion nutzen.",
       );
-      console.error("Fehler bei der Benutzerüberprüfung:", error?.message);
       return;
     }
 
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (permissionResult.granted === false) {
+    if (!permissionResult.granted) {
       Alert.alert(
         "Berechtigung benötigt",
         "Du musst die Kamera-Berechtigung erteilen!",
@@ -173,44 +101,27 @@ export default function ChallengeScreen() {
     });
 
     if (!result.canceled) {
-      Alert.alert(
-        "Foto bestätigen",
-        "Möchtest du dieses Foto verwenden?",
-        [
-          {
-            text: "Nein",
-            style: "cancel",
-          },
-          {
-            text: "Ja",
-            onPress: async () => {
-              if (result.assets[0].uri) {
-                console.log("Foto URI:", result.assets[0].uri);
+      const compressedUri = await compressImage(result.assets[0].uri);
 
-                // Hochladen des Bildes
-                const uploadedUrl = await uploadToSupabase(
-                  result.assets[0].uri,
-                );
-                console.log("uploadedUrl__:", uploadedUrl);
-
-                if (uploadedUrl) {
-                  setPhotoUri(uploadedUrl); // Setze die URL
-                  Alert.alert(
-                    "Upload erfolgreich",
-                    "Das Foto wurde hochgeladen!",
-                  );
-                } else {
-                  Alert.alert(
-                    "Upload fehlgeschlagen",
-                    "Das Foto konnte nicht hochgeladen werden.",
-                  );
-                }
-              }
-            },
-          },
-        ],
-        { cancelable: false },
+      // Nutze uploadImageAndSavePost für Online- und Offline-Speicherung
+      const postData = await uploadImageAndSavePost(
+        compressedUri,
+        user.id,
+        dailyChallenge.id,
+        "Beschreibung des Posts", // Hier kannst du eine Beschreibung hinzufügen
       );
+
+      if (postData) {
+        setPhotoUri(
+          "https://plus.unsplash.com/premium_photo-1686865496874-88f234809983?q=80&w=2128&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        ); // Zeige das Bild an
+        Alert.alert("Erfolg", "Die Herausforderung wurde abgeschlossen!");
+      } else {
+        Alert.alert(
+          "Fehler",
+          "Die Herausforderung konnte nicht abgeschlossen werden.",
+        );
+      }
     }
   };
 
@@ -224,7 +135,7 @@ export default function ChallengeScreen() {
           </Text>
           <Link href="/" style={styles.finishButton}>
             <TouchableOpacity>
-              <Text style={styles.buttonText}>Accept Challenge</Text>
+              <Text style={styles.buttonText}>Zurück zum Feed</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -237,7 +148,7 @@ export default function ChallengeScreen() {
               </TouchableOpacity>
             </View>
           </Link>
-          <Text style={styles.title}>Your challenge for today</Text>
+          <Text style={styles.title}>Deine Challenge für heute</Text>
           {dailyChallenge ? (
             <View>
               <Text style={styles.challengeTitle}>{dailyChallenge.title}</Text>
@@ -256,14 +167,14 @@ export default function ChallengeScreen() {
                 style={styles.acceptButton}
                 onPress={handleAcceptChallenge}
               >
-                <Text style={styles.buttonText}>Accept Challenge</Text>
+                <Text style={styles.buttonText}>Challenge annehmen</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={styles.cameraButton}
                 onPress={handleOpenCamera}
               >
-                <Text style={styles.buttonText}>Open Camera</Text>
+                <Text style={styles.buttonText}>Kamera öffnen</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -350,7 +261,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
-
   finishButton: {
     backgroundColor: "#4CAF50",
     width: "100%",

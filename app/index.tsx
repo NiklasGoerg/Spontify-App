@@ -10,24 +10,27 @@ export default function HomeScreen() {
   const [email, setEmail] = useState(""); // E-Mail des Benutzers
   const [password, setPassword] = useState(""); // Passwort des Benutzers
   const [user, setUser] = useState(null); // Benutzer-Session
-  const [online, setOnline] = useState(false); // Benutzer-Session
+  const [online, setOnline] = useState(navigator.onLine); // Benutzer-Session
 
   // Authentifizierungsstatus überwachen
   useEffect(() => {
     const fetchSession = async () => {
+      // Wenn keine Internetverbindung besteht, einfach FeedScreen anzeigen
       if (!navigator.onLine) {
         console.log("Keine Internetverbindung");
         setOnline(false);
+        setUser(true); // Feed anzeigen, da wir annehmen, dass der Benutzer eingeloggt ist
         return;
-      } else if (navigator.onLine) {
-        setOnline(true);
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("Fehler beim Abrufen der Session:", error.message);
-          setUser(null);
-        } else {
-          setUser(data?.session?.user || null);
-        }
+      }
+
+      // Wenn Internetverbindung besteht, Supabase-Session abrufen
+      setOnline(true);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Fehler beim Abrufen der Session:", error.message);
+        setUser(null); // Session ist ungültig
+      } else {
+        setUser(data?.session?.user || null); // Benutzer mit aktiver Session setzen
       }
     };
 
@@ -35,11 +38,12 @@ export default function HomeScreen() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user || null);
+        setUser(session?.user || null); // Authentifizierungsstatus überwachen
       },
     );
+
     return () => {
-      authListener?.subscription?.unsubscribe();
+      authListener?.subscription?.unsubscribe(); // Listener bei Unmounten abmelden
     };
   }, []);
 

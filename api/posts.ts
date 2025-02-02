@@ -8,8 +8,9 @@ import {
   setFriends,
   setChallenges,
 } from "../store/feedSlice";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import * as FileSystem from "expo-file-system";
+import NetInfo from "@react-native-community/netinfo";
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
@@ -91,7 +92,7 @@ export const savePost = async (
     }
 
     console.log("Post erfolgreich gespeichert:", data);
-    return data;
+    return data ?? "keine Daten";
   } catch (err) {
     console.error("Unerwarteter Fehler beim Speichern des Posts:", err);
     return null;
@@ -212,6 +213,86 @@ export const fetchReactions = async (postId: string) => {
   }
 };
 
+export const uploadImage = async (uri: string) => {
+  try {
+    console.log("Start Upload mit URI:", uri);
+
+    // Prüfe, ob der Benutzer angemeldet ist
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      Alert.alert(
+        "Fehler",
+        "Nur angemeldete Benutzer können Dateien hochladen.",
+      );
+      console.error("Fehler bei der Benutzerüberprüfung:", authError?.message);
+      return null;
+    }
+
+    console.log("Angemeldeter Benutzer:", user.email);
+
+    // Lade die Datei von der URI
+    const response = await fetch(uri);
+    if (!response.ok) {
+      console.error("Fehler beim Abrufen der Datei:", response.statusText);
+      Alert.alert("Fehler", "Die Datei konnte nicht gelesen werden.");
+      return null;
+    }
+
+    const blob = await response.blob();
+    console.log("Blob erstellt, Größe:", blob.size);
+
+    // Konvertiere den Blob in einen ArrayBuffer mit FileReader
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(blob);
+    });
+    console.log("ArrayBuffer erstellt, Größe:", arrayBuffer.byteLength);
+
+    // Erstelle einen Dateinamen (z. B. userID/timestamp.jpg)
+    const fileName = `images/${user.id}/${Date.now()}.jpg`;
+
+    // Lade die Datei zu Supabase hoch
+    const { data, error } = await supabase.storage
+      .from("images")
+      .upload(fileName, new Uint8Array(arrayBuffer), {
+        contentType: "image/jpeg", // Dateityp angeben
+        cacheControl: "3600", // Optional: Caching
+        upsert: true, // Überschreiben, falls vorhanden
+      });
+
+    if (error) {
+      console.error("Fehler beim Hochladen:", error.message);
+      return null;
+    }
+
+    console.log("Upload erfolgreich:", data);
+
+    // Hole die öffentliche URL
+    /*const { publicUrl } = supabase.storage
+      .from("images")
+      .getPublicUrl(data.path);
+      */
+
+    const baseUrl =
+      "xbszoksbpwbmvjfjjcjl.supabase.co/storage/v1/object/public/images/";
+    const publicUrl = `${baseUrl}${data.path}`;
+
+    console.log("data.path:", data.path);
+    console.log("Öffentliche URL:", publicUrl);
+
+    return publicUrl;
+  } catch (err) {
+    console.error("Fehler beim Hochladen:", err);
+    return null;
+  }
+};
+
 export const savePostsOnDevice = async (posts: any[]): Promise<any[]> => {
   try {
     const updatedPosts = await Promise.all(
@@ -263,5 +344,220 @@ export const loadPostsFromDevice = async () => {
   } catch (error) {
     console.error("Fehler beim Laden der Posts:", error);
     return [];
+  }
+};
+
+export const saveOfflinePost = async (
+  userId: string,
+  challengeId: string,
+  photoUri: string,
+) => {
+  if (!userId || !challengeId || !photoUri) {
+    console.error("Fehlende Werte: userId, challengeId, photoUri ist leer.");
+    return null;
+  }
+
+  try {
+    // Bild lokal speichern
+    const imageUri = await FileSystem.readAsStringAsync(photoUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const post = {
+      userId,
+      challengeId,
+      photoUri: imageUri,
+    };
+
+    // Speichern des Posts und Bildes in AsyncStorage
+    await AsyncStorage.setItem("offlinePost", JSON.stringify(post));
+
+    console.log("Offline-Post erfolgreich gespeichert.");
+  } catch (err) {
+    console.error("Fehler beim Speichern des Offline-Posts:", err);
+  }
+};
+
+export const uploadOfflinePosts = async () => {
+  try {
+    const offlinePost = await AsyncStorage.getItem("offlinePost");
+
+    if (!offlinePost) {
+      console.log("Keine Offline-Posts zum Hochladen.");
+      return;
+    }
+
+    const post = JSON.parse(offlinePost);
+
+    // Versuche Post hochzuladen
+    post = { ...post };
+    savePost(post.userId, post.challengeId, post.photoUri, post.description);
+
+    await AsyncStorage.setItem("offlinePost", JSON.stringify({}));
+  } catch (err) {
+    console.error("Fehler beim Hochladen der Offline-Posts:", err);
+  }
+};
+
+export const uploadImageAndSavePost = async (
+  uri: string,
+  userId: string,
+  challengeId: string,
+  description: string,
+) => {
+  try {
+    // Überprüfe die Internetverbindung
+    const isConnected = await NetInfo.fetch().then(
+      (state) => state.isConnected,
+    );
+
+    if (!isConnected) {
+      console.log("Keine Internetverbindung. Speichere den Post lokal.");
+
+      // Speichere das Bild lokal
+      const localImageUri = await saveImageLocally(uri);
+      if (!localImageUri) {
+        Alert.alert(
+          "Fehler",
+          "Das Bild konnte nicht lokal gespeichert werden.",
+        );
+        return null;
+      }
+
+      // Speichere den Post lokal im AsyncStorage
+      const postData = {
+        userId,
+        challengeId,
+        photoUrl: localImageUri,
+        description,
+        isLocal: true, // Markiere den Post als lokal gespeichert
+      };
+
+      await savePostLocally(postData);
+      console.log("Post lokal gespeichert:", postData);
+      Alert.alert(
+        "Info",
+        "Der Post wurde lokal gespeichert und wird später hochgeladen.",
+      );
+      return postData;
+    }
+
+    // Wenn Internetverbindung vorhanden ist, lade das Bild hoch und speichere den Post
+    const photoUrl = await uploadImage(uri);
+
+    if (!photoUrl) {
+      console.error("Fehler beim Hochladen des Bildes.");
+      return null;
+    }
+
+    console.log("Bild erfolgreich hochgeladen, URL:", photoUrl);
+
+    const postData = await savePost(userId, challengeId, photoUrl, description);
+
+    if (!postData) {
+      console.error("Fehler beim Speichern des Posts.");
+      return null;
+    }
+
+    console.log("Post erfolgreich gespeichert:", postData);
+    return photoUrl;
+  } catch (err) {
+    console.error("Unerwarteter Fehler:", err);
+    return null;
+  }
+};
+
+// Hilfsfunktion: Speichere das Bild lokal
+const saveImageLocally = async (uri: string): Promise<string | null> => {
+  try {
+    // Erstelle einen eindeutigen Dateinamen
+    const fileName = `local_image_${Date.now()}.jpg`;
+    const localUri = `${FileSystem.documentDirectory}${fileName}`;
+
+    // Kopiere das Bild in den lokalen Speicher
+    await FileSystem.copyAsync({ from: uri, to: localUri });
+    console.log("Bild lokal gespeichert:", localUri);
+    return localUri;
+  } catch (err) {
+    console.error("Fehler beim lokalen Speichern des Bildes:", err);
+    return null;
+  }
+};
+
+// Hilfsfunktion: Speichere den Post lokal im AsyncStorage
+const savePostLocally = async (postData: any) => {
+  try {
+    // Hole die aktuell gespeicherten lokalen Posts
+    const localPosts = await AsyncStorage.getItem("localPosts");
+    const posts = localPosts ? JSON.parse(localPosts) : [];
+
+    // Füge den neuen Post hinzu
+    posts.push(postData);
+
+    // Speichere die aktualisierte Liste im AsyncStorage
+    await AsyncStorage.setItem("localPosts", JSON.stringify(posts));
+    console.log("Post lokal im AsyncStorage gespeichert.");
+  } catch (err) {
+    console.error("Fehler beim Speichern des Posts im AsyncStorage:", err);
+  }
+};
+
+// Hilfsfunktion: Lade lokale Posts hoch, wenn Internetverbindung verfügbar ist
+export const uploadLocalPosts = async () => {
+  try {
+    const isConnected = await NetInfo.fetch().then(
+      (state) => state.isConnected,
+    );
+    if (!isConnected) {
+      console.log(
+        "Keine Internetverbindung. Lokale Posts können nicht hochgeladen werden.",
+      );
+      return;
+    }
+
+    // Hole die lokal gespeicherten Posts
+    const localPosts = await AsyncStorage.getItem("localPosts");
+    if (!localPosts) {
+      console.log("Keine lokalen Posts zum Hochladen gefunden.");
+      return;
+    }
+
+    const posts = JSON.parse(localPosts);
+
+    // Gehe durch jeden lokalen Post und versuche ihn hochzuladen
+    for (const post of posts) {
+      if (post.isLocal) {
+        const { userId, challengeId, photoUrl, description } = post;
+
+        // Lade das Bild hoch
+        const uploadedPhotoUrl = await uploadImage(photoUrl);
+        if (!uploadedPhotoUrl) {
+          console.error("Fehler beim Hochladen des lokalen Bildes.");
+          continue;
+        }
+
+        // Speichere den Post in der Datenbank
+        const savedPost = await savePost(
+          userId,
+          challengeId,
+          uploadedPhotoUrl,
+          description,
+        );
+        if (savedPost) {
+          console.log("Lokaler Post erfolgreich hochgeladen:", savedPost);
+
+          // Entferne den erfolgreich hochgeladenen Post aus dem lokalen Speicher
+          const updatedPosts = posts.filter((p: any) => p !== post);
+          await AsyncStorage.setItem(
+            "localPosts",
+            JSON.stringify(updatedPosts),
+          );
+        }
+      }
+    }
+
+    console.log("Alle lokalen Posts wurden verarbeitet.");
+  } catch (err) {
+    console.error("Fehler beim Hochladen der lokalen Posts:", err);
   }
 };

@@ -18,6 +18,11 @@ import { fetchFriends } from "@/api/friends";
 import { supabase } from "@/supabaseClient";
 import NetInfo from "@react-native-community/netinfo"; // Importiere NetInfo
 import Post from "./Post";
+import {
+  fetchPreferences,
+  savePreferences,
+  savePreferencesOnDevice,
+} from "@/api/preferences";
 
 const Feed = () => {
   const dispatch = useDispatch();
@@ -50,39 +55,44 @@ const Feed = () => {
         const offlinePosts = await loadPostsFromDevice();
         setStructuredPosts(offlinePosts);
         console.log("Offline Posts geladen: ", offlinePosts);
+        setLoading(false); // Ladevorgang abgeschlossen
         return;
       } else {
         // Online-Modus: Lade Posts und Challenges von der API
-        const user = await supabase.auth.getUser();
-        const friendsData = await fetchFriends();
+        try {
+          const user = await supabase.auth.getUser();
+          const friendsData = await fetchFriends();
 
-        dispatch(setFriends(friendsData));
+          dispatch(setFriends(friendsData));
 
-        const posts = await fetchPostsByUser(user.data.user.id);
-        dispatch(setPosts(posts));
+          const posts = await fetchPostsByUser(user.data.user.id);
+          dispatch(setPosts(posts));
 
-        const challenges = await fetchChallenges();
-        dispatch(setChallenges(challenges));
-        saveChallengesOnDevice(challenges);
+          const challenges = await fetchChallenges();
+          dispatch(setChallenges(challenges));
+          saveChallengesOnDevice(challenges);
 
-        let structuredPosts = selectStructuredPosts(
-          posts,
-          friendsData,
-          challenges,
-        );
-        structuredPosts = await savePostsOnDevice(structuredPosts);
-        console.log("Structured Posts: ", structuredPosts);
-        setStructuredPosts(structuredPosts); // Setze Posts in den State
+          let structuredPosts = selectStructuredPosts(
+            posts,
+            friendsData,
+            challenges,
+          );
+          structuredPosts = await savePostsOnDevice(structuredPosts);
+          console.log("Structured Posts: ", structuredPosts);
+          setStructuredPosts(structuredPosts); // Setze Posts in den State
+
+          const preferences = await fetchPreferences();
+          savePreferencesOnDevice(preferences);
+        } catch (err) {
+          console.error("Fehler beim Laden der Daten:", err);
+          setError("Fehler beim Laden der Daten");
+        }
       }
     };
 
-    loadData()
-      .catch((err) => {
-        console.error("Fehler beim Laden der Daten:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    loadData().finally(() => {
+      setLoading(false);
+    });
   }, [dispatch, isOnline]);
 
   if (loading) {
