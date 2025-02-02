@@ -15,9 +15,10 @@ import { logoutUser } from "@/api/profile";
 const ProfileScreen = () => {
   const [username, setUsername] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isUserCreated, setIsUserCreated] = useState(false); // Prüfen, ob der Benutzer schon in der users-Tabelle existiert
+  const [isUserCreated, setIsUserCreated] = useState(false);
+  const [location, setLocation] = useState<string>("überall");
 
-  // Aktuellen Benutzernamen und Status abrufen
+  // Benutzerdaten abrufen
   useEffect(() => {
     const fetchUserProfile = async () => {
       const user = await supabase.auth.getUser();
@@ -26,7 +27,7 @@ const ProfileScreen = () => {
         return;
       }
 
-      // Prüfen, ob der Benutzer schon in der users-Tabelle existiert
+      // Benutzerprofil abrufen
       const { data, error } = await supabase
         .from("users")
         .select("full_name")
@@ -35,13 +36,23 @@ const ProfileScreen = () => {
 
       if (error && error.code !== "PGRST116") {
         console.error("Fehler beim Abrufen der Benutzerdaten:", error.message);
-        Alert.alert("Fehler", "Benutzerprofil konnte nicht geladen werden.");
         return;
       }
 
       if (data) {
-        setUsername(data.full_name || ""); // Benutzername aus der Tabelle laden
-        setIsUserCreated(true); // Benutzer existiert in der users-Tabelle
+        setUsername(data.full_name || "");
+        setIsUserCreated(true);
+      }
+
+      // Challenge-Präferenzen abrufen (nur Standort)
+      const { data: preferences, error: prefError } = await supabase
+        .from("challenge_preferences")
+        .select("location")
+        .eq("user_id", user.data.user.id)
+        .single();
+
+      if (preferences) {
+        setLocation(preferences.location || "überall");
       }
     };
 
@@ -56,7 +67,6 @@ const ProfileScreen = () => {
     }
 
     setIsSaving(true);
-
     const user = await supabase.auth.getUser();
     if (!user?.data?.user?.id) {
       Alert.alert("Fehler", "Benutzer ist nicht angemeldet.");
@@ -65,7 +75,7 @@ const ProfileScreen = () => {
     }
 
     if (!isUserCreated) {
-      // Benutzer in der users-Tabelle erstellen
+      // Benutzer erstellen
       const { error } = await supabase.from("users").insert({
         id: user.data.user.id,
         full_name: username,
@@ -81,7 +91,7 @@ const ProfileScreen = () => {
 
       setIsUserCreated(true);
     } else {
-      // Benutzername in der users-Tabelle aktualisieren
+      // Benutzername aktualisieren
       const { error } = await supabase
         .from("users")
         .update({ full_name: username })
@@ -101,6 +111,50 @@ const ProfileScreen = () => {
     Alert.alert("Erfolg", "Benutzername erfolgreich gespeichert!");
     setIsSaving(false);
   };
+
+  // Standort speichern
+  const handleSaveLocation = async () => {
+    const user = await supabase.auth.getUser();
+    if (!user?.data?.user?.id) {
+      Alert.alert("Fehler", "Benutzer ist nicht angemeldet.");
+      return;
+    }
+  
+    // Prüfen, ob bereits ein Eintrag existiert
+    const { data: existingPreference, error: fetchError } = await supabase
+      .from("challenge_preferences")
+      .select("id")
+      .eq("user_id", user.data.user.id)
+      .single();
+  
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Fehler beim Abrufen der Challenge-Präferenzen:", fetchError.message);
+      Alert.alert("Fehler", "Challenge-Präferenzen konnten nicht geladen werden.");
+      return;
+    }
+  
+    let error;
+    if (existingPreference) {
+      // Falls ein Eintrag existiert -> UPDATE
+      ({ error } = await supabase
+        .from("challenge_preferences")
+        .update({ location })
+        .eq("user_id", user.data.user.id));
+    } else {
+      // Falls kein Eintrag existiert -> INSERT
+      ({ error } = await supabase
+        .from("challenge_preferences")
+        .insert({ user_id: user.data.user.id, location }));
+    }
+  
+    if (error) {
+      console.error("Fehler beim Speichern des Standorts:", error.message);
+      Alert.alert("Fehler", "Standort konnte nicht gespeichert werden.");
+    } else {
+      Alert.alert("Erfolg", "Standort wurde gespeichert!");
+    }
+  };
+  
 
   return (
     <View style={styles.container}>
@@ -138,17 +192,21 @@ const ProfileScreen = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Abschnitt Challenge Settings */}
+        {/* Standort Präferenz */}
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
-          <Link href="/ChallengeTypesScreen" asChild>
-            <TouchableOpacity style={styles.challengeButton}>
-              <Text style={styles.challengeButtonText}>
-                Challenge preference
-              </Text>
-              <Text style={styles.arrow}>&gt;</Text>
-            </TouchableOpacity>
-          </Link>
+          <Text style={styles.sectionTitle}>STANDORT</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Standort (z. B. Berlin oder überall)"
+            value={location}
+            onChangeText={setLocation}
+            placeholderTextColor="#888"
+          />
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleSaveLocation}>
+            <Text style={styles.actionButtonText}>Standort speichern</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Button: Logout */}
@@ -213,35 +271,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  settingsSection: {
-    width: "100%",
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 10,
-  },
-  challengeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1e1e1e",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  challengeButtonText: {
-    fontSize: 16,
-    color: "#fff",
-  },
-  arrow: {
-    fontSize: 16,
-    color: "#fff",
   },
 });
 
