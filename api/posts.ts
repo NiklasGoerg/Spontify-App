@@ -30,7 +30,7 @@ export const fetchPostsByUser = async (userId: string) => {
       // Beiträge der Freunde abrufen
       const { data: posts, error: postsError } = await supabase
         .from("posts")
-        .select("user_id, photo_url, challenge_id")
+        .select("user_id, photo_url, challenge_id, created_at")
         .in("user_id", friendIds)
         .order("created_at", { ascending: false });
   
