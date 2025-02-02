@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Animated,
+  Platform,
 } from "react-native";
 import { PostType } from "@/types";
 import { saveReaction } from "@/api/posts";
@@ -17,7 +18,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post }) => {
   const [reactionsVisible, setReactionsVisible] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
-  console.log("Post: ", post);
+  console.log("Post: ", post.photo_url);
 
   const toggleReactions = () => {
     if (reactionsVisible) {
@@ -78,7 +79,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
       </View>
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: `https://${post.photo_url}` }}
+          source={{
+            uri:
+              Platform.OS === "web"
+                ? `https://${post.photo_url}` // Web: Base64-Daten
+                : post.photo_url, // Android/iOS: Lokaler Dateipfad
+          }}
           style={styles.image}
           resizeMode="contain"
         />

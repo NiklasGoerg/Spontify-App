@@ -5,8 +5,6 @@ import LoginForm from "./login"; // Deine Login-Formular-Komponente
 import { Provider } from "react-redux";
 import store from "@/store/store";
 import FeedScreen from "./FeedScreen"; // Dein Feed-Bildschirm
-import { fetchFriends } from "@/api/friends";
-import { fetchFriendsPosts } from "@/api/posts";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState(""); // E-Mail des Benutzers
@@ -40,16 +38,6 @@ export default function HomeScreen() {
         setUser(session?.user || null);
       },
     );
-
-    const loadData = async () => {
-      const friendsData = await fetchFriends();
-      console.log("index: ", friendsData);
-
-      const posts = await fetchFriendsPosts(friendsData);
-    };
-
-    loadData();
-
     return () => {
       authListener?.subscription?.unsubscribe();
     };

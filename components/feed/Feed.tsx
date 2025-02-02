@@ -6,9 +6,14 @@ import {
   setFriends,
   setOnline,
   setPosts,
+  selectStructuredPosts,
 } from "@/store/feedSlice";
-import { fetchPostsByUser, loadPostsFromDevice } from "@/api/posts";
-import { fetchChallenges } from "@/api/challenges";
+import {
+  fetchPostsByUser,
+  loadPostsFromDevice,
+  savePostsOnDevice,
+} from "@/api/posts";
+import { fetchChallenges, saveChallengesOnDevice } from "@/api/challenges";
 import { fetchFriends } from "@/api/friends";
 import { supabase } from "@/supabaseClient";
 import NetInfo from "@react-native-community/netinfo"; // Importiere NetInfo
@@ -50,19 +55,24 @@ const Feed = () => {
         // Online-Modus: Lade Posts und Challenges von der API
         const user = await supabase.auth.getUser();
         const friendsData = await fetchFriends();
-        console.log("friends: ", friendsData);
 
         dispatch(setFriends(friendsData));
 
         const posts = await fetchPostsByUser(user.data.user.id);
         dispatch(setPosts(posts));
-        console.log("posts: ", posts);
 
         const challenges = await fetchChallenges();
         dispatch(setChallenges(challenges));
-        console.log("challenges: ", challenges);
+        saveChallengesOnDevice(challenges);
 
-        setStructuredPosts(posts); // Setze Posts in den State
+        let structuredPosts = selectStructuredPosts(
+          posts,
+          friendsData,
+          challenges,
+        );
+        structuredPosts = await savePostsOnDevice(structuredPosts);
+        console.log("Structured Posts: ", structuredPosts);
+        setStructuredPosts(structuredPosts); // Setze Posts in den State
       }
     };
 
