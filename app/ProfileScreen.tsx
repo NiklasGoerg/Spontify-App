@@ -217,25 +217,17 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Standort Präferenz */}
+        {/* Abschnitt Challenge Settings */}
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>STANDORT</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Standort (z. B. Berlin oder überall)"
-            value={location}
-            onChangeText={setLocation}
-            placeholderTextColor="#888"
-          />
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleSaveLocation}
-          >
-            <Text style={styles.actionButtonText}>Standort speichern</Text>
-          </TouchableOpacity>
           <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
+          <Link href="/ChallengeTypesScreen" asChild>
+            <TouchableOpacity style={styles.challengeButton}>
+              <Text style={styles.challengeButtonText}>
+                Challenge preference
+              </Text>
+              <Text style={styles.arrow}>&gt;</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         {/* Button: Logout */}
@@ -311,6 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#333",
+    marginBottom: 50,
   },
   challengeButtonText: {
     fontSize: 16,
