@@ -17,9 +17,9 @@ import {
   fetchChallenges,
 } from "../api/challenges";
 import { fetchPreferences } from "../api/preferences";
-import { uploadImageAndSavePost } from "../api/posts";
+import { saveOfflinePost, uploadImageAndSavePost } from "../api/posts";
 import { Link } from "expo-router";
-import { checkConnectionOnWeb } from "@/api/profile";
+import { checkConnectionOnWeb, loadUserFromDevice } from "@/api/profile";
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
@@ -30,7 +30,7 @@ export default function ChallengeScreen() {
   useEffect(() => {
     const checkNetworkStatus = async () => {
       const state = await NetInfo.fetch();
-      const onlineStatus = state.isConnected ?? (await checkConnectionOnWeb());
+      const onlineStatus = state.isConnected && (await checkConnectionOnWeb());
       setIsOffline(!onlineStatus);
       return onlineStatus;
     };
@@ -41,8 +41,20 @@ export default function ChallengeScreen() {
       if (!online) {
         console.log("Offline-Modus: Lade gespeicherte Challenges...");
         const storedChallenges = await loadChallengesFromDevice();
+        console.log("stored", storedChallenges);
         if (storedChallenges.length > 0) {
-          setDailyChallenge(storedChallenges[0]);
+          setDailyChallenge(
+            storedChallenges[
+              Math.floor(Math.random() * storedChallenges.length)
+            ],
+          );
+          console.log(
+            "chosen",
+            dailyChallenge,
+            storedChallenges[
+              Math.floor(Math.random() * storedChallenges.length)
+            ],
+          );
         } else {
           console.warn("Keine Challenges im lokalen Speicher gefunden.");
         }
@@ -114,11 +126,13 @@ export default function ChallengeScreen() {
         console.log("Offline: Bild wird lokal gespeichert.");
         setPhotoUri(compressedUri);
         Alert.alert("Offline", "Das Bild wurde lokal gespeichert.");
+        saveOfflinePost(dailyChallenge.id, compressedUri);
       } else {
         console.log("Online: Bild wird hochgeladen.");
+        const user = await loadUserFromDevice();
         const postData = await uploadImageAndSavePost(
           compressedUri,
-          "user_id",
+          user.id,
           dailyChallenge.id,
           "Beschreibung des Posts",
         );

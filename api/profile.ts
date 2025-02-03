@@ -2,10 +2,13 @@ import { supabase } from "../supabaseClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import { uploadImageAndSavePost, uploadOfflinePosts } from "./posts";
 
 export const checkConnectionOnWeb = async () => {
   try {
-    const response = await fetch("https://httpbin.org/get", { method: "GET" });
+    const response = await fetch("https://1.1.1.1/cdn-cgi/trace", {
+      method: "GET",
+    });
     console.log("Response: ", response);
     return response.ok;
   } catch (error) {
@@ -38,6 +41,8 @@ export const initializeUser = async (
   if (sessionUser) {
     await saveUserOnDevice(sessionUser);
     setUserCallback(sessionUser);
+    const postData = await uploadOfflinePosts();
+    console.log("Offline-Posts hochgeladen:", postData);
   }
 };
 
@@ -109,7 +114,7 @@ const saveUserOnDevice = async (user: any) => {
 };
 
 // Benutzer-Session vom Gerät laden
-const loadUserFromDevice = async () => {
+export const loadUserFromDevice = async () => {
   try {
     const jsonData = await AsyncStorage.getItem("user");
     return jsonData ? JSON.parse(jsonData) : null;

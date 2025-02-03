@@ -11,7 +11,7 @@ import {
 import { Alert, Platform } from "react-native";
 import * as FileSystem from "expo-file-system";
 import NetInfo from "@react-native-community/netinfo";
-import { checkConnectionOnWeb } from "./profile";
+import { checkConnectionOnWeb, loadUserFromDevice } from "./profile";
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
@@ -353,30 +353,38 @@ export const loadPostsFromDevice = async () => {
 };
 
 export const saveOfflinePost = async (
-  userId: string,
   challengeId: string,
   photoUri: string,
 ) => {
+  const user = await loadUserFromDevice();
+  const userId = user.id;
+  console.log("loaded offline user", user, user.id);
+
   if (!userId || !challengeId || !photoUri) {
-    console.error("Fehlende Werte: userId, challengeId, photoUri ist leer.");
+    console.error("Fehlende Werte: userId, challengeId oder photoUri.");
     return null;
   }
 
   try {
-    // Bild lokal speichern
-    const imageUri = await FileSystem.readAsStringAsync(photoUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    let imageData = photoUri;
+
+    if (Platform.OS === "web") {
+      // Web: Lokale URL in Base64 umwandeln
+      imageData = await convertImageToBase64(photoUri);
+    } else {
+      // Mobile: Bild als Base64 speichern
+      imageData = await FileSystem.readAsStringAsync(photoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
 
     const post = {
       userId,
       challengeId,
-      photoUri: imageUri,
+      photoUri: imageData, // Speichert Base64 auf Mobile und Web
     };
 
-    // Speichern des Posts und Bildes in AsyncStorage
     await AsyncStorage.setItem("offlinePost", JSON.stringify(post));
-
     console.log("Offline-Post erfolgreich gespeichert.");
   } catch (err) {
     console.error("Fehler beim Speichern des Offline-Posts:", err);
@@ -394,60 +402,86 @@ export const uploadOfflinePosts = async () => {
 
     const post = JSON.parse(offlinePost);
 
-    // Versuche Post hochzuladen
-    post = { ...post };
-    savePost(post.userId, post.challengeId, post.photoUri, post.description);
+    if (!post.photoUri) {
+      console.error("Offline-Post enthält kein Bild.");
+      return;
+    }
 
-    await AsyncStorage.setItem("offlinePost", JSON.stringify({}));
+    let localFileUri = post.photoUri;
+
+    if (Platform.OS === "web") {
+      // Web: Base64 in Blob umwandeln und als Datei speichern
+      const blob = base64ToBlob(post.photoUri);
+      localFileUri = await blobToFile(blob, "offline-upload.jpg");
+    } else {
+      // Mobile: Base64 wieder in eine Datei speichern
+      localFileUri = FileSystem.cacheDirectory + "offline-upload.jpg";
+      await FileSystem.writeAsStringAsync(localFileUri, post.photoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+
+    console.log("Temporäre Datei erstellt:", localFileUri);
+
+    // Post hochladen
+    await uploadImageAndSavePost(
+      localFileUri,
+      post.userId,
+      post.challengeId,
+      post.description || "",
+    );
+
+    // Nach erfolgreichem Upload den Offline-Post löschen
+    await AsyncStorage.removeItem("offlinePost");
+    return localFileUri;
   } catch (err) {
     console.error("Fehler beim Hochladen der Offline-Posts:", err);
   }
 };
 
+// Web: Lokale URL in Base64 umwandeln
+const convertImageToBase64 = async (imageUri: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    fetch(imageUri)
+      .then((response) => response.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+          } else {
+            reject("Fehler beim Konvertieren des Bildes.");
+          }
+        };
+      })
+      .catch((error) => reject(error));
+  });
+};
+
+// Web: Base64 in Blob umwandeln
+const base64ToBlob = (base64: string): Blob => {
+  const byteCharacters = atob(base64.split(",")[1]); // Base64-Daten dekodieren
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: "image/jpeg" });
+};
+
+// Web: Blob in Datei umwandeln
+const blobToFile = async (blob: Blob, fileName: string): Promise<File> => {
+  return new File([blob], fileName, { type: blob.type });
+};
+
 export const uploadImageAndSavePost = async (
-  uri: string,
+  uri: string | File,
   userId: string,
   challengeId: string,
   description: string,
 ) => {
   try {
-    // Überprüfe die Internetverbindung
-    const isConnected = await NetInfo.fetch().then(
-      (state) => state.isConnected,
-    );
-
-    if (!isConnected) {
-      console.log("Keine Internetverbindung. Speichere den Post lokal.");
-
-      // Speichere das Bild lokal
-      const localImageUri = await saveImageLocally(uri);
-      if (!localImageUri) {
-        Alert.alert(
-          "Fehler",
-          "Das Bild konnte nicht lokal gespeichert werden.",
-        );
-        return null;
-      }
-
-      // Speichere den Post lokal im AsyncStorage
-      const postData = {
-        userId,
-        challengeId,
-        photoUrl: localImageUri,
-        description,
-        isLocal: true, // Markiere den Post als lokal gespeichert
-      };
-
-      await savePostLocally(postData);
-      console.log("Post lokal gespeichert:", postData);
-      Alert.alert(
-        "Info",
-        "Der Post wurde lokal gespeichert und wird später hochgeladen.",
-      );
-      return postData;
-    }
-
-    // Wenn Internetverbindung vorhanden ist, lade das Bild hoch und speichere den Post
     const photoUrl = await uploadImage(uri);
 
     if (!photoUrl) {
@@ -469,100 +503,5 @@ export const uploadImageAndSavePost = async (
   } catch (err) {
     console.error("Unerwarteter Fehler:", err);
     return null;
-  }
-};
-
-// Hilfsfunktion: Speichere das Bild lokal
-const saveImageLocally = async (uri: string): Promise<string | null> => {
-  try {
-    // Erstelle einen eindeutigen Dateinamen
-    const fileName = `local_image_${Date.now()}.jpg`;
-    const localUri = `${FileSystem.documentDirectory}${fileName}`;
-
-    // Kopiere das Bild in den lokalen Speicher
-    await FileSystem.copyAsync({ from: uri, to: localUri });
-    console.log("Bild lokal gespeichert:", localUri);
-    return localUri;
-  } catch (err) {
-    console.error("Fehler beim lokalen Speichern des Bildes:", err);
-    return null;
-  }
-};
-
-// Hilfsfunktion: Speichere den Post lokal im AsyncStorage
-const savePostLocally = async (postData: any) => {
-  try {
-    // Hole die aktuell gespeicherten lokalen Posts
-    const localPosts = await AsyncStorage.getItem("localPosts");
-    const posts = localPosts ? JSON.parse(localPosts) : [];
-
-    // Füge den neuen Post hinzu
-    posts.push(postData);
-
-    // Speichere die aktualisierte Liste im AsyncStorage
-    await AsyncStorage.setItem("localPosts", JSON.stringify(posts));
-    console.log("Post lokal im AsyncStorage gespeichert.");
-  } catch (err) {
-    console.error("Fehler beim Speichern des Posts im AsyncStorage:", err);
-  }
-};
-
-// Hilfsfunktion: Lade lokale Posts hoch, wenn Internetverbindung verfügbar ist
-export const uploadLocalPosts = async () => {
-  try {
-    const isConnected = await NetInfo.fetch().then(
-      (state) => state.isConnected,
-    );
-    if (!isConnected) {
-      console.log(
-        "Keine Internetverbindung. Lokale Posts können nicht hochgeladen werden.",
-      );
-      return;
-    }
-
-    // Hole die lokal gespeicherten Posts
-    const localPosts = await AsyncStorage.getItem("localPosts");
-    if (!localPosts) {
-      console.log("Keine lokalen Posts zum Hochladen gefunden.");
-      return;
-    }
-
-    const posts = JSON.parse(localPosts);
-
-    // Gehe durch jeden lokalen Post und versuche ihn hochzuladen
-    for (const post of posts) {
-      if (post.isLocal) {
-        const { userId, challengeId, photoUrl, description } = post;
-
-        // Lade das Bild hoch
-        const uploadedPhotoUrl = await uploadImage(photoUrl);
-        if (!uploadedPhotoUrl) {
-          console.error("Fehler beim Hochladen des lokalen Bildes.");
-          continue;
-        }
-
-        // Speichere den Post in der Datenbank
-        const savedPost = await savePost(
-          userId,
-          challengeId,
-          uploadedPhotoUrl,
-          description,
-        );
-        if (savedPost) {
-          console.log("Lokaler Post erfolgreich hochgeladen:", savedPost);
-
-          // Entferne den erfolgreich hochgeladenen Post aus dem lokalen Speicher
-          const updatedPosts = posts.filter((p: any) => p !== post);
-          await AsyncStorage.setItem(
-            "localPosts",
-            JSON.stringify(updatedPosts),
-          );
-        }
-      }
-    }
-
-    console.log("Alle lokalen Posts wurden verarbeitet.");
-  } catch (err) {
-    console.error("Fehler beim Hochladen der lokalen Posts:", err);
   }
 };
