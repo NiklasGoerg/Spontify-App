@@ -115,7 +115,9 @@ const Post: React.FC<PostProps> = ({ post }) => {
       </View>
       <Text style={styles.challenge}>Challenge: {post.challenge?.title}</Text>
       <Text style={styles.date}>
-        {new Date(post.created_at).toLocaleDateString()}
+        {new Date(post.created_at).toLocaleDateString() +
+          " " +
+          new Date(post.created_at).toLocaleTimeString()}
       </Text>
       <View style={styles.comments}>
         <Text style={styles.commentTitle}>Comments:</Text>

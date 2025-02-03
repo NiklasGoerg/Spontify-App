@@ -81,6 +81,12 @@ const Feed = () => {
           friendsData,
           challenges,
         );
+        structuredPosts.sort((a: any, b: any) => b.created_at - a.created_at);
+        structuredPosts = structuredPosts.filter((post: any) => {
+          const postDate = new Date(post.created_at);
+          const today = new Date();
+          return postDate.getTime() > today.getTime() - 1000 * 60 * 60 * 48;
+        });
         structuredPosts = await savePostsOnDevice(structuredPosts);
         setStructuredPosts(structuredPosts);
 
