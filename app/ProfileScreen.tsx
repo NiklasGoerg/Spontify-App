@@ -119,20 +119,26 @@ const ProfileScreen = () => {
       Alert.alert("Fehler", "Benutzer ist nicht angemeldet.");
       return;
     }
-  
+
     // Prüfen, ob bereits ein Eintrag existiert
     const { data: existingPreference, error: fetchError } = await supabase
       .from("challenge_preferences")
       .select("id")
       .eq("user_id", user.data.user.id)
       .single();
-  
+
     if (fetchError && fetchError.code !== "PGRST116") {
-      console.error("Fehler beim Abrufen der Challenge-Präferenzen:", fetchError.message);
-      Alert.alert("Fehler", "Challenge-Präferenzen konnten nicht geladen werden.");
+      console.error(
+        "Fehler beim Abrufen der Challenge-Präferenzen:",
+        fetchError.message,
+      );
+      Alert.alert(
+        "Fehler",
+        "Challenge-Präferenzen konnten nicht geladen werden.",
+      );
       return;
     }
-  
+
     let error;
     if (existingPreference) {
       // Falls ein Eintrag existiert -> UPDATE
@@ -146,7 +152,7 @@ const ProfileScreen = () => {
         .from("challenge_preferences")
         .insert({ user_id: user.data.user.id, location }));
     }
-  
+
     if (error) {
       console.error("Fehler beim Speichern des Standorts:", error.message);
       Alert.alert("Fehler", "Standort konnte nicht gespeichert werden.");
@@ -154,7 +160,6 @@ const ProfileScreen = () => {
       Alert.alert("Erfolg", "Standort wurde gespeichert!");
     }
   };
-  
 
   return (
     <View style={styles.container}>
@@ -204,14 +209,38 @@ const ProfileScreen = () => {
             placeholderTextColor="#888"
           />
 
-          <TouchableOpacity style={styles.actionButton} onPress={handleSaveLocation}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleSaveLocation}
+          >
             <Text style={styles.actionButtonText}>Standort speichern</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Standort Präferenz */}
+        <View style={styles.settingsSection}>
+          <Text style={styles.sectionTitle}>STANDORT</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Standort (z. B. Berlin oder überall)"
+            value={location}
+            onChangeText={setLocation}
+            placeholderTextColor="#888"
+          />
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleSaveLocation}
+          >
+            <Text style={styles.actionButtonText}>Standort speichern</Text>
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
+        </View>
+
         {/* Button: Logout */}
         <View style={styles.settingsSection}>
-          <TouchableOpacity style={styles.actionButton} onPress={logoutUser} >
+          <TouchableOpacity style={styles.actionButton} onPress={logoutUser}>
             <Text style={styles.actionButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
@@ -271,6 +300,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  challengeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1e1e1e",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  challengeButtonText: {
+    fontSize: 16,
+    color: "#fff",
   },
 });
 
