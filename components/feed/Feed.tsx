@@ -28,7 +28,7 @@ import { checkConnectionOnWeb } from "@/api/profile";
 const Feed = () => {
   const dispatch = useDispatch();
   const { posts, friends, challenges, online } = useSelector(
-    (state: any) => state.feed,
+    (state: any) => state.feed
   );
 
   const [structuredPosts, setStructuredPosts]: any[] = useState([]);
@@ -74,7 +74,7 @@ const Feed = () => {
         let structuredPosts = selectStructuredPosts(
           posts,
           friendsData,
-          challenges,
+          challenges
         );
         structuredPosts = await savePostsOnDevice(structuredPosts);
         setStructuredPosts(structuredPosts);
@@ -104,7 +104,9 @@ const Feed = () => {
 
   return (
     <View style={styles.container}>
-      {structuredPosts?.map((post: any) => <Post key={post.id} post={post} />)}
+      {structuredPosts?.map((post: any) => (
+        <Post key={`${post.challenge_id}_${post.user_id}`} post={post} />
+      ))}
     </View>
   );
 };

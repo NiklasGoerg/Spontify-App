@@ -75,3 +75,35 @@ export const getRandomChallenge = async (preferences: string[]) => {
   console.warn("Keine passende Challenge gefunden.");
   return null;
 };
+
+export const fetchChallenges = async () => {
+  const { data, error } = await supabase.from("challenges").select("*");
+
+  if (error) {
+    console.error("Fehler beim Abrufen der Challenges:", error.message);
+    return [];
+  }
+
+  console.log("Challenges erfolgreich abgerufen:", data);
+  return data || [];
+};
+
+export const saveChallengesOnDevice = async (challenges: any[]) => {
+  try {
+    const jsonData = JSON.stringify(challenges);
+    await AsyncStorage.setItem("challenges", jsonData);
+    console.log("challenges erfolgreich gespeichert!", jsonData);
+  } catch (error) {
+    console.error("Fehler beim Speichern der challenges:", error);
+  }
+};
+
+export const loadChallengesFromDevice = async () => {
+  try {
+    const jsonData = await AsyncStorage.getItem("challenges");
+    return jsonData != null ? JSON.parse(jsonData) : [];
+  } catch (error) {
+    console.error("Fehler beim Laden der challenges:", error);
+    return [];
+  }
+};
