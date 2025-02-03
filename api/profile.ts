@@ -5,7 +5,8 @@ import NetInfo from "@react-native-community/netinfo";
 
 export const checkConnectionOnWeb = async () => {
   try {
-    const response = await fetch("https://www.google.com", { method: "HEAD" });
+    const response = await fetch("https://httpbin.org/get", { method: "GET" });
+      console.log("Response: ", response);
     return response.ok;
   } catch (error) {
     return false;

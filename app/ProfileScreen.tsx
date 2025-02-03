@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router"; // Für die Verlinkung
 import { supabase } from "../supabaseClient";
+import { logoutUser } from "@/api/profile";
 
 const ProfileScreen = () => {
   const [username, setUsername] = useState<string>("");
@@ -152,7 +153,7 @@ const ProfileScreen = () => {
 
         {/* Button: Logout */}
         <View style={styles.settingsSection}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={logoutUser} >
             <Text style={styles.actionButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
