@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Animated,
+  Platform,
 } from "react-native";
 import { PostType } from "@/types";
 import { saveReaction } from "@/api/posts";
@@ -17,6 +18,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post }) => {
   const [reactionsVisible, setReactionsVisible] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
+  console.log("Post: ", post);
 
   const toggleReactions = () => {
     if (reactionsVisible) {
@@ -67,33 +69,38 @@ const Post: React.FC<PostProps> = ({ post }) => {
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <Image
-          source={{ uri: post.user.profilePictureUrl }}
+          source={require("@/assets/images/profile-pic.jpg")}
           style={styles.profilePicture}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.username}>{post.user.username}</Text>
-          <Text style={styles.location}>{post.location}</Text>
+          <Text style={styles.username}>{post.user?.friend_name}</Text>
+          <Text style={styles.location}>{"Dresden"}</Text>
         </View>
       </View>
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: post.imageUrl }}
+          source={{
+            uri:
+              Platform.OS === "web"
+                ? `https://${post.photo_url}` // Web: Base64-Daten
+                : post.photo_url, // Android/iOS: Lokaler Dateipfad
+          }}
           style={styles.image}
           resizeMode="contain"
         />
         <View style={styles.reactionsContainer}>
-        {post.reactions.map((reaction, index) => (
-          <Text
-            key={index}
-            style={[
-              styles.reactionEmoji,
-              { left: index * 10, top: index * 5 },
-            ]}
-          >
-            {reaction.reaction}
-          </Text>
-        ))}
-      </View>
+          {post.reactions?.map((reaction, index) => (
+            <Text
+              key={index}
+              style={[
+                styles.reactionEmoji,
+                { left: index * 10, top: index * 5 },
+              ]}
+            >
+              {reaction.reaction}
+            </Text>
+          ))}
+        </View>
         <TouchableOpacity
           style={styles.reactionToggleButton}
           onPress={toggleReactions}
@@ -106,9 +113,9 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </Animated.View>
         )}
       </View>
-      <Text style={styles.challenge}>Challenge: {post.challenge}</Text>
+      <Text style={styles.challenge}>Challenge: {post.challenge?.title}</Text>
       <Text style={styles.date}>
-        {new Date(post.submittedAt).toLocaleDateString()}
+        {new Date(post.created_at).toLocaleDateString()}
       </Text>
       <View style={styles.comments}>
         <Text style={styles.commentTitle}>Comments:</Text>
@@ -120,6 +127,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
 const styles = StyleSheet.create({
   postContainer: {
+    width: "100%",
     marginBottom: 15,
     padding: 10,
     backgroundColor: "#1e1e1e",

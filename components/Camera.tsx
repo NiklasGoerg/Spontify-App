@@ -45,9 +45,21 @@ export default function CameraComponent({
     setPhotoUri(null);
   };
 
-  const handleSendPhoto = () => {
+  const handleSendPhoto = async () => {
     if (photoUri) {
-      onSend(photoUri);
+      const success = await saveChallengePhoto(
+        photoUri,
+        "challenge-id-here", // Ersetze dies durch die echte Challenge-ID
+        "Beschreibung zur Challenge", // Beschreibung der Challenge
+      );
+
+      if (success) {
+        alert("Foto erfolgreich gespeichert!");
+        onClose();
+      } else {
+        console.log("Fehler beim Speichern des Fotos. :(");
+        alert("Fehler beim Speichern des Fotos.");
+      }
     }
   };
 

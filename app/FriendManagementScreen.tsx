@@ -15,6 +15,7 @@ import {
   addFriend,
   removeFriend,
 } from "../api/friends";
+import { Link } from "expo-router";
 
 const FriendManagementScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +75,14 @@ const FriendManagementScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Link href="/">
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={styles.logo}
+        />
+      </Link>
       {/* Suchfeld */}
+
       <TextInput
         style={styles.searchInput}
         placeholder="Freunde suchen..."
@@ -96,7 +104,9 @@ const FriendManagementScreen = () => {
               }}
               style={styles.profileImage}
             />
-            <Text style={styles.friendText}>{item.friend_name || "Unbekannt"}</Text>
+            <Text style={styles.friendText}>
+              {item.friend_name || "Unbekannt"}
+            </Text>
             <TouchableOpacity
               onPress={() => handleRemoveFriend(item.id)}
               style={styles.removeButton}
@@ -134,13 +144,25 @@ const FriendManagementScreen = () => {
                       onPress={() =>
                         alreadyFriend
                           ? handleRemoveFriend(
-                              friends.find((f) => f.friend_id === item.id)?.id || ""
+                              friends.find((f) => f.friend_id === item.id)
+                                ?.id || "",
                             )
-                          : handleAddFriend(item.id, item.full_name || item.email)
+                          : handleAddFriend(
+                              item.id,
+                              item.full_name || item.email,
+                            )
                       }
-                      style={alreadyFriend ? styles.removeButton : styles.addButton}
+                      style={
+                        alreadyFriend ? styles.removeButton : styles.addButton
+                      }
                     >
-                      <Text style={alreadyFriend ? styles.removeButtonText : styles.addButtonText}>
+                      <Text
+                        style={
+                          alreadyFriend
+                            ? styles.removeButtonText
+                            : styles.addButtonText
+                        }
+                      >
                         {alreadyFriend ? "REMOVE" : "ADD"}
                       </Text>
                     </TouchableOpacity>
@@ -214,6 +236,11 @@ const styles = StyleSheet.create({
   removeButtonText: {
     color: "#fff",
     fontSize: 14,
+  },
+  logo: {
+    width: 100,
+    height: 40,
+    resizeMode: "contain",
   },
 });
 

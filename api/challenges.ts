@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../supabaseClient";
 
 // Hole eine zufällige Challenge basierend auf den Präferenzen, Standort und aktueller Zeit

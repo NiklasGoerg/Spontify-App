@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
-import { Link } from "expo-router";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Link } from "expo-router"; // Für die Verlinkung
 import { supabase } from "../supabaseClient";
 
 const ProfileScreen = () => {
@@ -89,7 +97,10 @@ const ProfileScreen = () => {
         .eq("id", user.data.user.id);
 
       if (error) {
-        console.error("Fehler beim Aktualisieren des Benutzernamens:", error.message);
+        console.error(
+          "Fehler beim Aktualisieren des Benutzernamens:",
+          error.message,
+        );
         Alert.alert("Fehler", "Benutzername konnte nicht aktualisiert werden.");
         setIsSaving(false);
         return;
@@ -180,6 +191,19 @@ const ProfileScreen = () => {
           </Text>
         </TouchableOpacity>
 
+        {/* Abschnitt Challenge Settings */}
+        <View style={styles.settingsSection}>
+          <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
+          <Link href="/ChallengeTypesScreen" asChild>
+            <TouchableOpacity style={styles.challengeButton}>
+              <Text style={styles.challengeButtonText}>
+                Challenge preference
+              </Text>
+              <Text style={styles.arrow}>&gt;</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+
         {/* Standort Präferenz */}
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>STANDORT</Text>
@@ -195,6 +219,7 @@ const ProfileScreen = () => {
           <TouchableOpacity style={styles.actionButton} onPress={handleSaveLocation}>
             <Text style={styles.actionButtonText}>Standort speichern</Text>
           </TouchableOpacity>
+          <Text style={styles.sectionTitle}>CHALLENGE SETTINGS</Text>
         </View>
 
         {/* Button: Logout */}
@@ -259,6 +284,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  challengeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1e1e1e",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  challengeButtonText: {
+    fontSize: 16,
+    color: "#fff",
   },
 });
 

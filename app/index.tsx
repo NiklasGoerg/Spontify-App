@@ -1,99 +1,39 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { supabase } from "../supabaseClient"; // Supabase-Client importieren
-import LoginForm from "./login"; // Deine Login-Formular-Komponente
+import { View, StyleSheet } from "react-native";
 import { Provider } from "react-redux";
 import store from "@/store/store";
-import FeedScreen from "./FeedScreen"; // Dein Feed-Bildschirm
+import FeedScreen from "./FeedScreen";
+import LoginForm from "./login";
+import {
+  initializeUser,
+  loginUser,
+  registerUser,
+  logoutUser,
+} from "@/api/profile";
 
 export default function HomeScreen() {
-  const [email, setEmail] = useState(""); // E-Mail des Benutzers
-  const [password, setPassword] = useState(""); // Passwort des Benutzers
-  const [user, setUser] = useState(null); // Benutzer-Session
+  const [user, setUser] = useState(null);
+  const [online, setOnline] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // Authentifizierungsstatus überwachen
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Fehler beim Abrufen der Session:", error.message);
-        setUser(null);
-      } else {
-        setUser(data?.session?.user || null);
-      }
-    };
-
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user || null);
-      }
-    );
-
-    return () => {
-      authListener?.subscription?.unsubscribe();
-    };
+    initializeUser(setUser, setOnline);
   }, []);
-
-  // Benutzer registrieren
-  const handleSignUp = async () => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      Alert.alert("Erfolg", `Benutzer erstellt: ${data.user.email}`);
-    } catch (error) {
-      Alert.alert("Fehler bei der Registrierung", error.message);
-    }
-  };
-
-  // Benutzer anmelden
-  const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      Alert.alert("Erfolg", `Willkommen zurück, ${data.user.email}`);
-    } catch (error) {
-      Alert.alert("Fehler bei der Anmeldung", error.message);
-    }
-  };
-
-  // Benutzer abmelden
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      setUser(null);
-      Alert.alert("Abgemeldet", "Sie wurden erfolgreich abgemeldet.");
-    } catch (error) {
-      Alert.alert("Fehler beim Abmelden", error.message);
-    }
-  };
 
   return (
     <Provider store={store}>
       <View style={styles.container}>
         {user ? (
-          <FeedScreen onSignOut={handleSignOut} /> // Feed anzeigen, wenn Benutzer angemeldet ist
+          <FeedScreen online={online} onSignOut={() => logoutUser(setUser)} />
         ) : (
           <LoginForm
             email={email}
             password={password}
             setEmail={setEmail}
             setPassword={setPassword}
-            onRegister={handleSignUp}
-            onLogin={handleLogin}
+            onRegister={() => registerUser(email, password, setUser)}
+            onLogin={() => loginUser(email, password, setUser)}
           />
         )}
       </View>
