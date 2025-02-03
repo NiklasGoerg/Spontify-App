@@ -18,7 +18,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post }) => {
   const [reactionsVisible, setReactionsVisible] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
-  console.log("Post: ", post.photo_url);
+  console.log("Post: ", post);
 
   const toggleReactions = () => {
     if (reactionsVisible) {
@@ -69,7 +69,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <Image
-          source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
+          source={require("@/assets/images/profile-pic.jpg")}
           style={styles.profilePicture}
         />
         <View style={styles.userInfo}>
@@ -115,7 +115,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
       </View>
       <Text style={styles.challenge}>Challenge: {post.challenge?.title}</Text>
       <Text style={styles.date}>
-        {new Date(post.submittedAt).toLocaleDateString()}
+        {new Date(post.created_at).toLocaleDateString()}
       </Text>
       <View style={styles.comments}>
         <Text style={styles.commentTitle}>Comments:</Text>
