@@ -1,48 +1,55 @@
 import { supabase } from "../supabaseClient";
-import { setOnline } from "@/store/feedSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
 
-// Benutzername aktualisieren
-export const updateUsername = async (username: string) => {
-  const { data, error } = await supabase.auth.updateUser({
-    data: { full_name: username },
-  });
-
-  if (error) {
-    console.error(
-      "Fehler beim Aktualisieren des Benutzernamens:",
-      error.message,
-    );
+export const checkConnectionOnWeb = async () => {
+  try {
+    const response = await fetch("https://www.google.com", { method: "HEAD" });
+    return response.ok;
+  } catch (error) {
     return false;
   }
+};
 
-  return true;
+// Benutzer beim App-Start initialisieren
+export const initializeUser = async (
+  setUserCallback: (user: any) => void,
+  setOnlineCallback: (status: boolean) => void,
+) => {
+  const netInfo = await NetInfo.fetch();
+  if (!netInfo.isConnected || !(await checkConnectionOnWeb())) {
+    console.log("Offline-Modus: Lade gespeicherten Benutzer");
+    const storedUser = await loadUserFromDevice();
+    if (storedUser) {
+      setUserCallback(storedUser);
+    }
+    setOnlineCallback(false);
+    return;
+  }
+
+  console.log(
+    "Online-Modus: Prüfe Session",
+    netInfo,
+    await checkConnectionOnWeb(),
+  );
+  const sessionUser = await fetchSession();
+  if (sessionUser) {
+    await saveUserOnDevice(sessionUser);
+    setUserCallback(sessionUser);
+  }
 };
 
 // Session abrufen
-export const fetchSession = async (
-  setOnlineCallback: (status: boolean) => void,
-) => {
-  if (!navigator.onLine) {
-    console.log("Keine Internetverbindung");
-    setOnlineCallback(false);
-    return null;
-  }
-
-  setOnlineCallback(true);
+const fetchSession = async () => {
+  const netInfo = await NetInfo.fetch();
+  if (!netInfo.isConnected || !(await checkConnectionOnWeb())) return null;
   const { data, error } = await supabase.auth.getSession();
-
-  if (error) {
-    console.error("Fehler beim Abrufen der Session:", error.message);
-    return null;
-  }
-
-  return data.session?.user || null;
+  return error ? null : data.session?.user || null;
 };
 
 // Benutzer registrieren
-export const handleSignUp = async (
+export const registerUser = async (
   email: string,
   password: string,
   setUserCallback: (user: any) => void,
@@ -50,16 +57,16 @@ export const handleSignUp = async (
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
-
     Alert.alert("Erfolg", `Benutzer erstellt: ${data.user?.email}`);
     setUserCallback(data.user);
+    await saveUserOnDevice(data.user);
   } catch (error: any) {
     Alert.alert("Fehler bei der Registrierung", error.message);
   }
 };
 
 // Benutzer anmelden
-export const handleLogin = async (
+export const loginUser = async (
   email: string,
   password: string,
   setUserCallback: (user: any) => void,
@@ -70,21 +77,21 @@ export const handleLogin = async (
       password,
     });
     if (error) throw error;
-
     Alert.alert("Erfolg", `Willkommen zurück, ${data.user.email}`);
     setUserCallback(data.user);
+    await saveUserOnDevice(data.user);
   } catch (error: any) {
     Alert.alert("Fehler bei der Anmeldung", error.message);
   }
 };
 
 // Benutzer abmelden
-export const handleSignOut = async (setUserCallback: (user: null) => void) => {
+export const logoutUser = async (setUserCallback: (user: null) => void) => {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-
     setUserCallback(null);
+    await AsyncStorage.removeItem("user");
     Alert.alert("Abgemeldet", "Sie wurden erfolgreich abgemeldet.");
   } catch (error: any) {
     Alert.alert("Fehler beim Abmelden", error.message);
@@ -92,17 +99,16 @@ export const handleSignOut = async (setUserCallback: (user: null) => void) => {
 };
 
 // Benutzer-Session auf Gerät speichern
-export const saveUserOnDevice = async (user: any) => {
+const saveUserOnDevice = async (user: any) => {
   try {
     await AsyncStorage.setItem("user", JSON.stringify(user));
-    console.log("User erfolgreich gespeichert!");
   } catch (error) {
     console.error("Fehler beim Speichern des Users:", error);
   }
 };
 
 // Benutzer-Session vom Gerät laden
-export const loadUserFromDevice = async () => {
+const loadUserFromDevice = async () => {
   try {
     const jsonData = await AsyncStorage.getItem("user");
     return jsonData ? JSON.parse(jsonData) : null;

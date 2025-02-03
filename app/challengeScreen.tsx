@@ -9,13 +9,17 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { supabase } from "../supabaseClient";
-import { getRandomChallenge } from "../api/challenges";
-import { fetchPreferences } from "../api/preferences";
 import NetInfo from "@react-native-community/netinfo";
-import { uploadImageAndSavePost } from "../api/posts"; // Nutze nur uploadImageAndSavePost
-import { loadChallengesFromDevice } from "../api/challenges";
+import {
+  getRandomChallenge,
+  loadChallengesFromDevice,
+  saveChallengesOnDevice,
+  fetchChallenges,
+} from "../api/challenges";
+import { fetchPreferences } from "../api/preferences";
+import { uploadImageAndSavePost } from "../api/posts";
 import { Link } from "expo-router";
+import { checkConnectionOnWeb } from "@/api/profile";
 
 export default function ChallengeScreen() {
   const [isChallengeAccepted, setIsChallengeAccepted] = useState(false);
@@ -26,24 +30,39 @@ export default function ChallengeScreen() {
   useEffect(() => {
     const checkNetworkStatus = async () => {
       const state = await NetInfo.fetch();
-      setIsOffline(!state.isConnected);
+      const onlineStatus = state.isConnected ?? (await checkConnectionOnWeb());
+      setIsOffline(!onlineStatus);
+      return onlineStatus;
     };
 
     const loadChallenge = async () => {
-      if (isOffline) {
-        const challenge = loadChallengesFromDevice();
-        setDailyChallenge(challenge);
-      } else {
-        const userPreferences = await fetchPreferences();
-        const preferences = Object.keys(userPreferences).filter(
-          (key) => userPreferences[key],
-        );
-        const challenge = await getRandomChallenge(preferences);
-        setDailyChallenge(challenge);
+      const online = await checkNetworkStatus();
+
+      if (!online) {
+        console.log("Offline-Modus: Lade gespeicherte Challenges...");
+        const storedChallenges = await loadChallengesFromDevice();
+        if (storedChallenges.length > 0) {
+          setDailyChallenge(storedChallenges[0]);
+        } else {
+          console.warn("Keine Challenges im lokalen Speicher gefunden.");
+        }
+        return;
+      }
+
+      console.log("Online-Modus: Lade neue Challenge...");
+      const userPreferences = await fetchPreferences();
+      const preferences = Object.keys(userPreferences).filter(
+        (key) => userPreferences[key],
+      );
+      const challenge = await getRandomChallenge(preferences);
+      setDailyChallenge(challenge);
+
+      if (challenge) {
+        const allChallenges = await fetchChallenges();
+        await saveChallengesOnDevice(allChallenges); // Speichere Herausforderungen offline
       }
     };
 
-    checkNetworkStatus();
     loadChallenge();
 
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -52,7 +71,7 @@ export default function ChallengeScreen() {
     });
 
     return () => unsubscribe();
-  }, [isOffline]);
+  }, []);
 
   const handleAcceptChallenge = () => {
     setIsChallengeAccepted(true);
@@ -66,24 +85,12 @@ export default function ChallengeScreen() {
       });
       return result.uri;
     } catch (err) {
-      console.error("Fehler bei der Komprimierung:", err);
+      console.error("Fehler bei der Bildkomprimierung:", err);
       return uri;
     }
   };
 
   const handleOpenCamera = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-    if (error || !user) {
-      Alert.alert(
-        "Fehler",
-        "Nur angemeldete Benutzer können diese Funktion nutzen.",
-      );
-      return;
-    }
-
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert(
@@ -103,24 +110,28 @@ export default function ChallengeScreen() {
     if (!result.canceled) {
       const compressedUri = await compressImage(result.assets[0].uri);
 
-      // Nutze uploadImageAndSavePost für Online- und Offline-Speicherung
-      const postData = await uploadImageAndSavePost(
-        compressedUri,
-        user.id,
-        dailyChallenge.id,
-        "Beschreibung des Posts", // Hier kannst du eine Beschreibung hinzufügen
-      );
-
-      if (postData) {
-        setPhotoUri(
-          "https://plus.unsplash.com/premium_photo-1686865496874-88f234809983?q=80&w=2128&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-        ); // Zeige das Bild an
-        Alert.alert("Erfolg", "Die Herausforderung wurde abgeschlossen!");
+      if (isOffline) {
+        console.log("Offline: Bild wird lokal gespeichert.");
+        setPhotoUri(compressedUri);
+        Alert.alert("Offline", "Das Bild wurde lokal gespeichert.");
       } else {
-        Alert.alert(
-          "Fehler",
-          "Die Herausforderung konnte nicht abgeschlossen werden.",
+        console.log("Online: Bild wird hochgeladen.");
+        const postData = await uploadImageAndSavePost(
+          compressedUri,
+          "user_id",
+          dailyChallenge.id,
+          "Beschreibung des Posts",
         );
+
+        if (postData) {
+          setPhotoUri(compressedUri);
+          Alert.alert("Erfolg", "Die Herausforderung wurde abgeschlossen!");
+        } else {
+          Alert.alert(
+            "Fehler",
+            "Die Herausforderung konnte nicht abgeschlossen werden.",
+          );
+        }
       }
     }
   };
@@ -205,11 +216,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
   },
-  buttonsContainer: {
-    width: "100%",
-    alignItems: "center",
-    marginTop: 20,
-  },
+  buttonsContainer: { width: "100%", alignItems: "center", marginTop: 20 },
   acceptButton: {
     backgroundColor: "#4CAF50",
     width: "100%",
@@ -224,11 +231,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 20,
   },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    textAlign: "center",
-  },
+  buttonText: { color: "#ffffff", fontSize: 18, textAlign: "center" },
   previewContainer: {
     flex: 1,
     justifyContent: "center",

@@ -23,6 +23,7 @@ import {
   savePreferences,
   savePreferencesOnDevice,
 } from "@/api/preferences";
+import { checkConnectionOnWeb } from "@/api/profile";
 
 const Feed = () => {
   const dispatch = useDispatch();
@@ -35,58 +36,56 @@ const Feed = () => {
   const [error, setError] = useState("");
 
   // Setze den initialen Status für online
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
 
-  // Überwache den Netzwerkstatus
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOnline(state.isConnected); // Setze den Online-Status auf Basis des NetInfo State
-      dispatch(setOnline(state.isConnected)); // Optional: Wenn du Redux dafür nutzt
+      setIsOnline(state.isConnected);
+      dispatch(setOnline(state.isConnected)); // Redux Online-Status setzen
     });
 
-    // Cleanup bei der Entladung des Components
     return () => unsubscribe();
   }, [dispatch]);
 
   useEffect(() => {
     const loadData = async () => {
-      if (!isOnline) {
-        // Offline-Modus: Lade Posts aus dem Gerät
+      if (!isOnline || !(await checkConnectionOnWeb())) {
+        console.log("Offline-Modus: Lade Posts von Gerät.");
         const offlinePosts = await loadPostsFromDevice();
         setStructuredPosts(offlinePosts);
-        console.log("Offline Posts geladen: ", offlinePosts);
-        setLoading(false); // Ladevorgang abgeschlossen
+        setLoading(false);
         return;
-      } else {
-        // Online-Modus: Lade Posts und Challenges von der API
-        try {
-          const user = await supabase.auth.getUser();
-          const friendsData = await fetchFriends();
+      }
 
-          dispatch(setFriends(friendsData));
+      try {
+        const user = await supabase.auth.getUser();
+        if (!user.data?.user) throw new Error("Benutzer nicht gefunden");
 
-          const posts = await fetchPostsByUser(user.data.user.id);
-          dispatch(setPosts(posts));
+        const friendsData = await fetchFriends();
+        dispatch(setFriends(friendsData));
 
-          const challenges = await fetchChallenges();
-          dispatch(setChallenges(challenges));
-          saveChallengesOnDevice(challenges);
+        const posts = await fetchPostsByUser(user.data.user.id);
+        dispatch(setPosts(posts));
 
-          let structuredPosts = selectStructuredPosts(
-            posts,
-            friendsData,
-            challenges,
-          );
-          structuredPosts = await savePostsOnDevice(structuredPosts);
-          console.log("Structured Posts: ", structuredPosts);
-          setStructuredPosts(structuredPosts); // Setze Posts in den State
+        const challenges = await fetchChallenges();
+        dispatch(setChallenges(challenges));
+        saveChallengesOnDevice(challenges);
 
-          const preferences = await fetchPreferences();
-          savePreferencesOnDevice(preferences);
-        } catch (err) {
-          console.error("Fehler beim Laden der Daten:", err);
-          setError("Fehler beim Laden der Daten");
-        }
+        let structuredPosts = selectStructuredPosts(
+          posts,
+          friendsData,
+          challenges,
+        );
+        structuredPosts = await savePostsOnDevice(structuredPosts);
+        setStructuredPosts(structuredPosts);
+
+        const preferences = await fetchPreferences();
+        savePreferencesOnDevice(preferences);
+      } catch (err) {
+        console.error("Fehler beim Laden der Daten:", err);
+        setError("Fehler beim Laden der Daten");
+      } finally {
+        setLoading(false);
       }
     };
 

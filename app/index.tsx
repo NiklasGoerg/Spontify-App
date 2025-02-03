@@ -1,50 +1,39 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Provider } from "react-redux";
 import store from "@/store/store";
 import FeedScreen from "./FeedScreen";
 import LoginForm from "./login";
 import {
-  fetchSession,
-  handleLogin,
-  handleSignUp,
-  handleSignOut,
+  initializeUser,
+  loginUser,
+  registerUser,
+  logoutUser,
 } from "@/api/profile";
 
 export default function HomeScreen() {
   const [user, setUser] = useState(null);
-  const [online, setOnline] = useState(navigator.onLine);
-  const [email, setEmail] = useState(""); // E-Mail des Benutzers
-  const [password, setPassword] = useState(""); // Passwort des Benutzers
+  const [online, setOnline] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // Authentifizierungsstatus überwachen
   useEffect(() => {
-    const checkSession = async () => {
-      const sessionUser = await fetchSession(setOnline);
-      setUser(sessionUser);
-    };
-
-    checkSession();
+    initializeUser(setUser, setOnline);
   }, []);
 
   return (
     <Provider store={store}>
       <View style={styles.container}>
         {user ? (
-          <FeedScreen
-            online={online}
-            onSignOut={() => handleSignOut(setUser)}
-          />
+          <FeedScreen online={online} onSignOut={() => logoutUser(setUser)} />
         ) : (
           <LoginForm
             email={email}
             password={password}
             setEmail={setEmail}
             setPassword={setPassword}
-            onRegister={async () =>
-              await handleSignUp(email, password, setUser)
-            }
-            onLogin={async () => await handleLogin(email, password, setUser)}
+            onRegister={() => registerUser(email, password, setUser)}
+            onLogin={() => loginUser(email, password, setUser)}
           />
         )}
       </View>

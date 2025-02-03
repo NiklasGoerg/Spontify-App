@@ -11,6 +11,7 @@ import {
 import { Alert, Platform } from "react-native";
 import * as FileSystem from "expo-file-system";
 import NetInfo from "@react-native-community/netinfo";
+import { checkConnectionOnWeb } from "./profile";
 
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
@@ -19,8 +20,13 @@ export const fetchPostsByUser = async (userId: string) => {
     return null;
   }
 
+  const netInfo = await NetInfo.fetch();
+  if (!netInfo.isConnected || !(await checkConnectionOnWeb())) {
+    console.log("Offline-Modus: Beiträge werden nicht von API geladen.");
+    return loadPostsFromDevice(); // Direkt lokale Daten laden
+  }
+
   try {
-    // Alle Freunde des Nutzers abrufen
     const { data: friends, error: friendsError } = await supabase
       .from("friends")
       .select("friend_id")
@@ -39,7 +45,6 @@ export const fetchPostsByUser = async (userId: string) => {
       return [];
     }
 
-    // Beiträge der Freunde abrufen
     const { data: posts, error: postsError } = await supabase
       .from("posts")
       .select("user_id, photo_url, challenge_id")
@@ -52,8 +57,8 @@ export const fetchPostsByUser = async (userId: string) => {
     }
 
     console.log("Beiträge erfolgreich abgerufen:", posts);
-
     store.dispatch(setPosts(posts));
+    await savePostsOnDevice(posts); // Speichere für Offline-Zugriff
 
     return posts;
   } catch (err) {
