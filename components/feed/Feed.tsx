@@ -28,7 +28,7 @@ import { checkConnectionOnWeb } from "@/api/profile";
 const Feed = () => {
   const dispatch = useDispatch();
   const { posts, friends, challenges, online } = useSelector(
-    (state: any) => state.feed
+    (state: any) => state.feed,
   );
 
   const [structuredPosts, setStructuredPosts]: any[] = useState([]);
@@ -49,7 +49,12 @@ const Feed = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!isOnline || !(await checkConnectionOnWeb())) {
+      console.log(
+        "Online-Status Feed:",
+        isOnline,
+        await checkConnectionOnWeb(),
+      );
+      if (!(await checkConnectionOnWeb())) {
         console.log("Offline-Modus: Lade Posts von Gerät.");
         const offlinePosts = await loadPostsFromDevice();
         setStructuredPosts(offlinePosts);
@@ -74,7 +79,7 @@ const Feed = () => {
         let structuredPosts = selectStructuredPosts(
           posts,
           friendsData,
-          challenges
+          challenges,
         );
         structuredPosts = await savePostsOnDevice(structuredPosts);
         setStructuredPosts(structuredPosts);
