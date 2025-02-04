@@ -13,6 +13,51 @@ import * as FileSystem from "expo-file-system";
 import NetInfo from "@react-native-community/netinfo";
 import { checkConnectionOnWeb, loadUserFromDevice } from "./profile";
 
+// eigenen Post abrufen
+export const fetchOwnPost = async (userId: string) => {
+  if (!userId) {
+    console.error("❌ Fehler: Fehlende userId.");
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error("❌ Fehler beim Abrufen des eigenen Posts:", error);
+      return null;
+    }
+
+    console.log("✅ Eigener neuester Post:", data);
+    return data.length > 0 ? data[0] : null;
+  } catch (err) {
+    console.error("❌ Unerwarteter Fehler:", err);
+    return null;
+  }
+};
+
+const toggleReactions = () => {
+  if (reactionsVisible) {
+    Animated.timing(animation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setReactionsVisible(false));
+  } else {
+    setReactionsVisible(true);
+    Animated.timing(animation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }
+};
+
 // posts von user abrufen (Maike) -> fetchPostsByUser
 export const fetchPostsByUser = async (userId: string) => {
   if (!userId) {

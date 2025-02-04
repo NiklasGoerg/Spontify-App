@@ -12,6 +12,7 @@ import {
   fetchPostsByUser,
   loadPostsFromDevice,
   savePostsOnDevice,
+  fetchOwnPost,
 } from "@/api/posts";
 import { fetchChallenges, saveChallengesOnDevice } from "@/api/challenges";
 import { fetchFriends } from "@/api/friends";
@@ -65,6 +66,10 @@ const Feed = () => {
       try {
         const user = await supabase.auth.getUser();
         if (!user.data?.user) throw new Error("Benutzer nicht gefunden");
+
+        // Hole den eigenen Post
+        const ownPost = await fetchOwnPost(user.data.user.id);
+        console.log("Own Post",ownPost);
 
         const friendsData = await fetchFriends();
         dispatch(setFriends(friendsData));
