@@ -47,7 +47,7 @@ export const fetchPostsByUser = async (userId: string) => {
 
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("user_id, photo_url, challenge_id, created_at")
+      .select("id, user_id, photo_url, challenge_id, created_at")
       .in("user_id", friendIds)
       .order("created_at", { ascending: false });
 
@@ -162,10 +162,9 @@ export const fetchComments = async (postId: string) => {
 // (Maike) -> saveReaction
 export const saveReaction = async (
   postId: string,
-  userId: string,
   reactionType: string | undefined,
 ) => {
-  if (!postId || !userId || !reactionType) {
+  if (!postId || !reactionType) {
     console.error("Fehlende Werte: postId, userId oder reactionType ist leer.");
     return null;
   }
@@ -174,7 +173,7 @@ export const saveReaction = async (
     const { data, error } = await supabase.from("reactions").insert([
       {
         post_id: postId,
-        user_id: userId,
+        user_id: null,
         reaction_type: reactionType,
       },
     ]);

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef , useEffect} from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { PostType } from "@/types";
-import { saveReaction } from "@/api/posts";
+import { saveReaction, fetchReactions } from "@/api/posts";
 
 interface PostProps {
   post: PostType;
@@ -17,8 +17,23 @@ interface PostProps {
 
 const Post: React.FC<PostProps> = ({ post }) => {
   const [reactionsVisible, setReactionsVisible] = useState(false);
+  const [reactions, setReactions] = useState<{ reaction_type: string }[]>([]);
   const animation = useRef(new Animated.Value(0)).current;
   console.log("Post: ", post);
+
+  useEffect(() => {
+    if (!post?.id) return;
+    const loadReactions = async () => {
+      console.log("Postid bei Reaction:", post.id);
+      const data = await fetchReactions(post.id);
+      console.log("Geladene Reaktionen:", data); 
+
+      if (data) {
+        setReactions(data);
+      }
+    };
+    loadReactions();
+  }, [post.id]);
 
   const toggleReactions = () => {
     if (reactionsVisible) {
@@ -37,10 +52,18 @@ const Post: React.FC<PostProps> = ({ post }) => {
     }
   };
 
-  const handleReaction = (reaction: string) => {
+  const handleReaction = async (reaction: string) => {
+    if (!post?.id) return;
     console.log(`User reacted with: ${reaction}`);
     saveReaction(post.id, reaction);
-    toggleReactions();
+    //toggleReactions();
+    setTimeout(async () => {
+      const updatedReactions = await fetchReactions(post.id);
+      console.log("Aktualisierte Reaktionen nach Verzögerung:", updatedReactions);
+      if (updatedReactions) {
+        setReactions(updatedReactions);
+      }
+    }, 500); // 500ms Verzögerung
   };
 
   const reactionButtons = ["👍", "❤️", "😂", "😮", "😢"].map((emoji) => (
@@ -89,15 +112,15 @@ const Post: React.FC<PostProps> = ({ post }) => {
           resizeMode="contain"
         />
         <View style={styles.reactionsContainer}>
-          {post.reactions?.map((reaction, index) => (
+          {reactions.map((reaction, index) => (
             <Text
               key={index}
               style={[
                 styles.reactionEmoji,
-                { left: index * 10, top: index * 5 },
+                { left: index * 30, top: index * (-3) },
               ]}
             >
-              {reaction.reaction}
+              {reaction.reaction_type}
             </Text>
           ))}
         </View>
@@ -227,7 +250,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   reactionEmoji: {
-    fontSize: 20,
+    fontSize: 30,
     position: "absolute",
   },
 });
