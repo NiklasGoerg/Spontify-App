@@ -10,6 +10,7 @@ import {
   registerUser,
   logoutUser,
 } from "@/api/profile";
+import { scheduleDailyNotification } from "@/api/notification";
 
 export default function HomeScreen() {
   const [user, setUser] = useState(null);
@@ -19,6 +20,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     initializeUser(setUser, setOnline);
+    scheduleDailyNotification();
   }, []);
 
   return (
