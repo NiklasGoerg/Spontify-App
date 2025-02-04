@@ -11,9 +11,10 @@ export async function requestNotificationPermissions() {
 function getRandomNotificationTime() {
   const minHour = 7;
   const maxHour = 22;
-  const randomHour = Math.floor(Math.random() * (maxHour - minHour + 1)) + minHour;
+  const randomHour =
+    Math.floor(Math.random() * (maxHour - minHour + 1)) + minHour;
   const randomMinute = Math.floor(Math.random() * 60);
-  
+
   const now = new Date();
   now.setHours(randomHour, randomMinute, 0, 0);
 
@@ -43,6 +44,8 @@ export async function scheduleDailyNotification() {
     trigger: { date: triggerTime },
   });
 
-  console.log(`Benachrichtigung für ${triggerTime.toLocaleTimeString()} geplant.`);
+  console.log(
+    `Benachrichtigung für ${triggerTime.toLocaleTimeString()} geplant.`,
+  );
   await AsyncStorage.setItem("lastNotificationDate", today);
 }

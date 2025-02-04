@@ -305,29 +305,35 @@ export const savePostsOnDevice = async (posts: any[]): Promise<any[]> => {
         if (!post.photo_url) return post;
 
         if (Platform.OS === "android" || Platform.OS === "ios") {
-          // Auf Android und iOS speichern wir das Bild lokal
-          const fileUri = `${FileSystem.documentDirectory}${post.user_id}.jpg`;
+          // Eindeutigen Dateinamen erstellen
+          const fileUri = `${FileSystem.documentDirectory}${post.user_id}-${post.created_at}.jpg`;
 
           const fileInfo = await FileSystem.getInfoAsync(fileUri);
           if (!fileInfo.exists) {
-            // Bild herunterladen und lokal speichern
+            console.log(
+              `Lade Bild herunter für Post ${post.user_id}||${post.created_at}: ${post.photo_url}`,
+            );
             await FileSystem.downloadAsync(
               `https://${post.photo_url}`,
               fileUri,
+            );
+          } else {
+            console.log(
+              `Bild für Post ${post.user_id}-${post.created_at} existiert bereits: ${fileUri}`,
             );
           }
 
           return { ...post, photo_url: fileUri }; // Speichert lokalen Datei-Pfad
         } else {
-          // Web: nicht speichern
-
-          return post;
+          return post; // Web: Keine Speicherung nötig
         }
       }),
     );
 
     // Posts in AsyncStorage speichern
     await AsyncStorage.setItem("posts", JSON.stringify(updatedPosts));
+    console.log("Alle Posts erfolgreich gespeichert!");
+
     return updatedPosts;
   } catch (error) {
     console.error("Fehler beim Speichern der Posts:", error);
