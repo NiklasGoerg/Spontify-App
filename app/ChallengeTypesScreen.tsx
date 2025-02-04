@@ -42,7 +42,7 @@ export default function ChallengeTypesScreen() {
   // Präferenzen speichern
   const saveChanges = async () => {
     await savePreferences(preferences);
-    alert("Präferenzen gespeichert!");
+    //alert("Präferenzen gespeichert!");
   };
 
   return (
